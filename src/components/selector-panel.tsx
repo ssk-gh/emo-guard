@@ -132,9 +132,14 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
 
     generateSelectorListItems() {
         return this.props.selectors.map((cssSelector, index) => (
-            <ListItem>
+            <ListItem sx={{ paddingRight: 10 }}>
                 <ListItemText
                     primary={cssSelector.value}
+                    primaryTypographyProps={{
+                        style: {
+                            overflowWrap: 'break-word'
+                        }
+                    }}
                 />
                 <ListItemSecondaryAction>
                     <IconButton

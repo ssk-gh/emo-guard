@@ -57,6 +57,11 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
             <ListItem>
                 <ListItemText
                     primary={keyword}
+                    primaryTypographyProps={{
+                        style: {
+                            overflowWrap: 'break-word'
+                        }
+                    }}
                 />
                 <ListItemSecondaryAction>
                     <IconButton
