@@ -3,21 +3,29 @@
   "description": "Have a safe web journey.",
   "version": "1.0.0",
   "manifest_version": 3,
+  "permissions": [
+    "storage",
+    "scripting",
+    "tabs",
+    "activeTab"
+  ],
   "background": {
     "service_worker": "/static/js/background.js"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "index.html",
     "default_icon": {}
   },
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "http://*/*",
+        "https://*/*"
       ],
       "js": [
-        "/static/js/content_script.js"
-      ]
+        "/static/js/content-script.js"
+      ],
+      "run_at": "document_start"
     }
   ]
 }
