@@ -1,4 +1,4 @@
-import { CssSelector, Site } from "./App";
+import { Site } from "./App";
 import { getStorageAsync } from "./utils/chrome-async";
 
 class ContentScript {
@@ -72,9 +72,9 @@ class ContentScript {
         const data = await getStorageAsync(['keywords', 'defaultSelectors', 'sites']);
         const keywords = (data.keywords ?? []) as string[];
 
-        const defaultSelectors = (data.defaultSelectors ?? []) as CssSelector[];
-        const filteredDefaultSelectors = defaultSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
         const sites = data.sites as Site[];
+        const defaultSelectors = sites.find(site => site.domain === 'default')?.cssSelectors;
+        const filteredDefaultSelectors = defaultSelectors?.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
         const domain = sites.find(site => site.domain === window.location.hostname);
         const enabled = domain ? domain.enabled : true;
         const domainSelectors = domain?.cssSelectors ?? [];

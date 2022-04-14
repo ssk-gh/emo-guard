@@ -74,7 +74,7 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
         return (
             <Grid container>
                 <Grid item xs={12}>
-                    <List sx={{ height: 410, maxHeight: 410, overflow: 'auto' }}>
+                    <List sx={{ height: 390, maxHeight: 390, overflow: 'auto' }}>
                         {this.generateKeywordListItems()}
                     </List>
                 </Grid>

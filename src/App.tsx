@@ -5,7 +5,6 @@ import { getActiveTabAsync, getStorageAsync } from './utils/chrome-async';
 
 export interface AppState {
   keywords: string[];
-  defaultSelectors: CssSelector[];
   sites: Site[];
   currentSiteIndex: number;
   activeDomain: string;
@@ -27,7 +26,6 @@ class App extends React.Component<{}, AppState> {
     super(props);
     this.state = {
       keywords: [],
-      defaultSelectors: [],
       sites: [
         {
           domain: 'default',
@@ -44,9 +42,6 @@ class App extends React.Component<{}, AppState> {
     const data = await getStorageAsync(['keywords', 'defaultSelectors', 'sites', 'interactiveSelector']);
     const keywords = (data.keywords ?? []) as string[];
     this.setState({ keywords: keywords });
-
-    const defaultSelectors = (data.defaultSelectors ?? []) as CssSelector[];
-    this.setState({ defaultSelectors: defaultSelectors });
 
     const sites = data.sites as Site[];
     if (sites && sites.length) {
@@ -89,7 +84,7 @@ class App extends React.Component<{}, AppState> {
   }
 
   getJoinedSelector = (): string => {
-    const defaultSelectors = this.state.defaultSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
+    const defaultSelectors = this.state.sites.find(site => site.domain === 'default')?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
     const domainSelectors = this.state.sites[this.state.currentSiteIndex].cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
     return defaultSelectors.concat(domainSelectors).join(',');
   }
@@ -99,12 +94,7 @@ class App extends React.Component<{}, AppState> {
     chrome.storage.sync.set({ keywords: keywords });
   }
 
-  setDefaultSelectors = (selectors: CssSelector[]) => {
-    this.setState({ defaultSelectors: selectors });
-    chrome.storage.sync.set({ defaultSelectors: selectors });
-  }
-
-  setDomainSelectors = (selectors: CssSelector[]) => {
+  setSelectors = (selectors: CssSelector[]) => {
     const newSites = this.state.sites.slice();
     newSites[this.state.currentSiteIndex].cssSelectors = selectors;
 
@@ -129,7 +119,8 @@ class App extends React.Component<{}, AppState> {
   }
 
   currentIsActiveDomain = () => {
-    return this.state.sites[this.state.currentSiteIndex].domain === this.state.activeDomain;
+    const currentDomain = this.state.sites[this.state.currentSiteIndex].domain;
+    return currentDomain === this.state.activeDomain || currentDomain === 'default';
   }
 
   render() {
@@ -137,13 +128,11 @@ class App extends React.Component<{}, AppState> {
       <div className="App">
         <BasicTabs
           keywords={this.state.keywords}
-          defaultSelectors={this.state.defaultSelectors}
           sites={this.state.sites}
           currentSiteIndex={this.state.currentSiteIndex}
           activeDomain={this.state.activeDomain}
           setKeywords={this.setKeywords}
-          setDefaultSelectors={this.setDefaultSelectors}
-          setDomainSelectors={this.setDomainSelectors}
+          setSelectors={this.setSelectors}
           setSites={this.setSites}
           setCurrentSite={this.setCurrentSite}
           setCurrentSiteIndex={this.setCurrentSiteIndex}

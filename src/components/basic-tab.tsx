@@ -3,12 +3,10 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import { DomainPanel } from './domain-panel';
+import { TargetPanel } from './target-panel';
 import { KeywordPanel } from './keyword-panel';
-import HomeIcon from '@mui/icons-material/Home';
 import BlockIcon from '@mui/icons-material/Block';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import { SelectorPanel } from './selector-panel';
 import { CssSelector, Site } from '../App';
 
 interface TabPanelProps {
@@ -46,13 +44,11 @@ function a11yProps(index: number) {
 
 interface BasicTabsProps {
     keywords: string[];
-    defaultSelectors: CssSelector[];
     sites: Site[];
     currentSiteIndex: number;
     activeDomain: string;
     setKeywords(keywords: string[]): void;
-    setDefaultSelectors(selectors: CssSelector[]): void;
-    setDomainSelectors(selectors: CssSelector[]): void;
+    setSelectors(selectors: CssSelector[]): void;
     setSites(sites: Site[]): void;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
@@ -71,13 +67,12 @@ export default function BasicTabs(props: BasicTabsProps) {
         <Box sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={value} onChange={handleChange} variant="fullWidth" aria-label="basic tabs example">
-                    <Tab icon={<HomeIcon />} {...a11yProps(0)} />
+                    <Tab icon={<FindInPageIcon />} {...a11yProps(0)} />
                     <Tab icon={<BlockIcon />} {...a11yProps(1)} />
-                    <Tab icon={<FindInPageIcon />} {...a11yProps(2)} />
                 </Tabs>
             </Box>
             <TabPanel value={value} index={0}>
-                <DomainPanel
+                <TargetPanel
                     sites={props.sites}
                     currentSite={props.sites[props.currentSiteIndex]}
                     currentSiteIndex={props.currentSiteIndex}
@@ -85,10 +80,10 @@ export default function BasicTabs(props: BasicTabsProps) {
                     activeDomain={props.activeDomain}
                     setCurrentSite={props.setCurrentSite}
                     setCurrentSiteIndex={props.setCurrentSiteIndex}
-                    setDomainSelectors={props.setDomainSelectors}
+                    setSelectors={props.setSelectors}
                     getJoinedSelector={props.getJoinedSelector}
                     currentIsActiveDomain={props.currentIsActiveDomain}
-                ></DomainPanel>
+                ></TargetPanel>
             </TabPanel>
             <TabPanel value={value} index={1}>
                 <KeywordPanel
@@ -96,16 +91,6 @@ export default function BasicTabs(props: BasicTabsProps) {
                     currentSite={props.sites[props.currentSiteIndex]}
                     setKeywords={props.setKeywords}
                 ></KeywordPanel>
-            </TabPanel>
-            <TabPanel value={value} index={2}>
-                <SelectorPanel
-                    selectors={props.defaultSelectors}
-                    keywords={props.keywords}
-                    listHeight={410}
-                    setSelectors={props.setDefaultSelectors}
-                    getJoinedSelector={props.getJoinedSelector}
-                    currentIsActiveDomain={() => true}
-                ></SelectorPanel>
             </TabPanel>
         </Box>
     );
