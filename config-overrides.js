@@ -1,17 +1,20 @@
-let path = require("path");
-const { override, disableChunk } = require("customize-cra");
+const path = require('path');
+const { override, disableChunk } = require('customize-cra');
 
 module.exports = {
-  webpack: function(config, env) {
-    // ビルド対象のファイルを追加
+  webpack: function (config, env) {
+    // Add files to build
     config.entry = {
-      main: [path.resolve("src/index")],
-      content_script: [path.resolve("src/content-script")],
-      background: [path.resolve("src/background")]
+      main: [path.resolve('src/index')],
+      'content-script': [path.resolve('src/content-script')],
+      background: [path.resolve('src/background')]
     };
 
-    // ファイル名にハッシュが含まれないようにする
-    config.output.filename = "static/js/[name].js";
+    // Avoid including hashes in file names
+    config.output.filename = 'static/js/[name].js';
+
+    // Inject only the specified <script> into the `index.html`
+    config.plugins[0].userOptions.chunks = ['main'];
 
     return override(
       disableChunk()
