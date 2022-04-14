@@ -1,26 +1,158 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import BasicTabs from './components/basic-tab';
+import { getActiveTabAsync, getStorageAsync } from './utils/chrome-async';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+export interface AppState {
+  keywords: string[];
+  defaultSelectors: CssSelector[];
+  sites: Site[];
+  currentSiteIndex: number;
+  activeDomain: string;
 }
 
-export default App;
+export interface Site {
+  domain: string;
+  enabled: boolean;
+  cssSelectors: CssSelector[];
+}
+
+export interface CssSelector {
+  value: string;
+  visibility: boolean;
+}
+
+class App extends React.Component<{}, AppState> {
+  constructor(props = {}) {
+    super(props);
+    this.state = {
+      keywords: [],
+      defaultSelectors: [],
+      sites: [
+        {
+          domain: 'default',
+          enabled: true,
+          cssSelectors: []
+        }
+      ],
+      currentSiteIndex: 0,
+      activeDomain: ''
+    };
+  }
+
+  async componentDidMount() {
+    const data = await getStorageAsync(['keywords', 'defaultSelectors', 'sites', 'interactiveSelector']);
+    const keywords = (data.keywords ?? []) as string[];
+    this.setState({ keywords: keywords });
+
+    const defaultSelectors = (data.defaultSelectors ?? []) as CssSelector[];
+    this.setState({ defaultSelectors: defaultSelectors });
+
+    const sites = data.sites as Site[];
+    if (sites && sites.length) {
+      this.setState({ sites: sites });
+    } else {
+      chrome.storage.sync.set({ sites: this.state.sites });
+    }
+
+    const activeTab = await getActiveTabAsync();
+    if (!activeTab.url) {
+      throw new Error('Unexpected error: Missing url');
+    }
+
+    const activeUrl = new URL(activeTab.url);
+    this.setState({ activeDomain: activeUrl.hostname });
+
+    const currentSiteIndex = this.state.sites.findIndex(site => site.domain === activeUrl.hostname);
+    if (currentSiteIndex >= 0) {
+      this.setState({ currentSiteIndex: currentSiteIndex });
+    } else {
+      const currentSite = {
+        domain: activeUrl.hostname,
+        enabled: true,
+        cssSelectors: []
+      };
+      const newSites = this.state.sites.concat([currentSite]);
+      this.setState({ sites: newSites });
+      this.setState({ currentSiteIndex: newSites.length - 1 });
+    }
+
+    if (data.interactiveSelector) {
+      const newSites = this.state.sites.slice();
+      newSites[this.state.currentSiteIndex].cssSelectors = newSites[this.state.currentSiteIndex].cssSelectors.concat([
+        { value: data.interactiveSelector, visibility: false }
+      ]);
+
+      this.setSites(newSites);
+      chrome.storage.sync.set({ interactiveSelector: '' });
+    }
+  }
+
+  getJoinedSelector = (): string => {
+    const defaultSelectors = this.state.defaultSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
+    const domainSelectors = this.state.sites[this.state.currentSiteIndex].cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
+    return defaultSelectors.concat(domainSelectors).join(',');
+  }
+
+  setKeywords = (keywords: string[]) => {
+    this.setState({ keywords: keywords });
+    chrome.storage.sync.set({ keywords: keywords });
+  }
+
+  setDefaultSelectors = (selectors: CssSelector[]) => {
+    this.setState({ defaultSelectors: selectors });
+    chrome.storage.sync.set({ defaultSelectors: selectors });
+  }
+
+  setDomainSelectors = (selectors: CssSelector[]) => {
+    const newSites = this.state.sites.slice();
+    newSites[this.state.currentSiteIndex].cssSelectors = selectors;
+
+    this.setState({ sites: newSites });
+    chrome.storage.sync.set({ sites: newSites });
+  }
+
+  setSites = (sites: Site[]) => {
+    this.setState({ sites: sites });
+    chrome.storage.sync.set({ sites: sites });
+  }
+
+  setCurrentSite = (site: Site) => {
+    const newSites = this.state.sites.slice();
+    newSites[this.state.currentSiteIndex] = site;
+
+    this.setSites(newSites);
+  }
+
+  setCurrentSiteIndex = (index: number) => {
+    this.setState({ currentSiteIndex: index });
+  }
+
+  currentIsActiveDomain = () => {
+    return this.state.sites[this.state.currentSiteIndex].domain === this.state.activeDomain;
+  }
+
+  render() {
+    return (
+      <div className="App">
+        <BasicTabs
+          keywords={this.state.keywords}
+          defaultSelectors={this.state.defaultSelectors}
+          sites={this.state.sites}
+          currentSiteIndex={this.state.currentSiteIndex}
+          activeDomain={this.state.activeDomain}
+          setKeywords={this.setKeywords}
+          setDefaultSelectors={this.setDefaultSelectors}
+          setDomainSelectors={this.setDomainSelectors}
+          setSites={this.setSites}
+          setCurrentSite={this.setCurrentSite}
+          setCurrentSiteIndex={this.setCurrentSiteIndex}
+          getJoinedSelector={this.getJoinedSelector}
+          currentIsActiveDomain={this.currentIsActiveDomain}
+        ></BasicTabs>
+      </div>
+    );
+  }
+}
+
+export { App };
