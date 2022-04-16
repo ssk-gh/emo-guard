@@ -46,15 +46,11 @@ class App extends React.Component<{}, AppState> {
 
   async componentDidMount() {
     const data = await getStorageAsync(['keywords', 'sites', 'interactiveSelector', 'emoGuardian', 'defaultTarget']);
-    const keywords = (data.keywords ?? []) as string[];
+    const keywords = (data.keywords ?? this.state.keywords) as string[];
     this.setState({ keywords: keywords });
 
-    const sites = data.sites as Site[];
-    if (sites && sites.length) {
-      this.setState({ sites: sites });
-    } else {
-      chrome.storage.sync.set({ sites: this.state.sites });
-    }
+    const sites = (data.sites ?? this.state.sites) as Site[];
+    this.setState({ sites: sites });
 
     const activeTab = await getActiveTabAsync();
     if (!activeTab.url) {
@@ -74,8 +70,10 @@ class App extends React.Component<{}, AppState> {
         cssSelectors: []
       };
       const newSites = this.state.sites.concat([currentSite]);
-      this.setState({ sites: newSites });
-      this.setState({ currentSiteIndex: newSites.length - 1 });
+      this.setState({
+        sites: newSites,
+        currentSiteIndex: newSites.length - 1
+      });
     }
 
     if (data.interactiveSelector) {
@@ -88,13 +86,16 @@ class App extends React.Component<{}, AppState> {
       chrome.storage.sync.set({ interactiveSelector: '' });
     }
 
-    const emoGuardian = data.emoGuardian ?? '';
+    const emoGuardian = data.emoGuardian ?? this.state.emoGuardian;
     this.setState({ emoGuardian: emoGuardian });
 
-    const defaultTarget = data.defaultTarget ?? 'this site';
+    const defaultTarget = data.defaultTarget ?? this.state.defaultTarget;
     this.setState({ defaultTarget: defaultTarget });
     if (defaultTarget === 'all sites') {
-      this.setState({ currentSiteIndex: 0 });
+      const allSitesIndex = this.state.sites.findIndex(site => site.domain === 'All sites');
+      if (allSitesIndex >= 0) {
+        this.setState({ currentSiteIndex: allSitesIndex });
+      }
     }
   }
 
