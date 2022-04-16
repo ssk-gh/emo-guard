@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { IconButton, TextField, Grid, Autocomplete, Box } from '@mui/material';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
-import HomeIcon from '@mui/icons-material/Home';
+import AllOutIcon from '@mui/icons-material/AllOut';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
 import { CssSelector, Site } from '../App';
 import { SelectorPanel } from './selector-panel';
@@ -39,11 +39,11 @@ class TargetPanel extends React.Component<TargetPanelProps> {
     }
 
     render() {
-        const currentIsDefault = this.props.currentSite.domain === 'default';
-        const powerSettingsButton = currentIsDefault
+        const currentIsAllSites = this.props.currentSite.domain === 'All sites';
+        const powerSettingsButton = currentIsAllSites
             ? (
                 <IconButton sx={{ padding: 0, mr: 1 }} disabled>
-                    <HomeIcon sx={{ fontSize: 60 }} color={'secondary'} />
+                    <AllOutIcon sx={{ fontSize: 60 }} color={'secondary'} />
                 </IconButton>
             )
             : (
@@ -111,7 +111,7 @@ class TargetAutocomplete extends React.Component<TargetAutocompleteProps, Target
         switch (domain) {
             case this.props.activeDomain:
                 return { color: '#1976d2' };
-            case 'default':
+            case 'All sites':
                 return { color: '#9c27b0' };
             default:
                 return undefined;

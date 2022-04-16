@@ -10,8 +10,9 @@ class ContentScript {
     keywords: string[] = [];
     selector: string = '';
     mutationCount: number = 0;
+    emoGuardian: string = '';
 
-    constructor(enabled: boolean, keywords: string[], selector: string) {
+    constructor(enabled: boolean, keywords: string[], selector: string, emoGuardian: string) {
         const targetNode = document.documentElement;
         if (!targetNode) {
             return;
@@ -20,6 +21,7 @@ class ContentScript {
         this.enabled = enabled;
         this.keywords = keywords;
         this.selector = selector;
+        this.emoGuardian = emoGuardian;
 
         const options: MutationObserverInit = { childList: true, subtree: true };
 
@@ -69,11 +71,12 @@ class ContentScript {
     }
 
     public static async build(): Promise<ContentScript> {
-        const data = await getStorageAsync(['keywords', 'defaultSelectors', 'sites']);
+        const data = await getStorageAsync(['keywords', 'sites', 'emoGuardian']);
         const keywords = (data.keywords ?? []) as string[];
+        const emoGuardian = data.emoGuardian ?? '';
 
         const sites = data.sites as Site[];
-        const defaultSelectors = sites.find(site => site.domain === 'default')?.cssSelectors;
+        const defaultSelectors = sites.find(site => site.domain === 'All sites')?.cssSelectors;
         const filteredDefaultSelectors = defaultSelectors?.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
         const domain = sites.find(site => site.domain === window.location.hostname);
         const enabled = domain ? domain.enabled : true;
@@ -81,7 +84,7 @@ class ContentScript {
         const filteredDomainSelectors = domainSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
         const selector = filteredDefaultSelectors.concat(filteredDomainSelectors).join(',') ?? '';
 
-        return new ContentScript(enabled, keywords, selector);
+        return new ContentScript(enabled, keywords, selector, emoGuardian);
     }
 
     private buildLoadingObserver = (): MutationObserver => {
@@ -233,7 +236,7 @@ class ContentScript {
         const newElement = element.cloneNode() as HTMLElement;
         const id = `wkb-${Math.random().toString(32).substring(2)}`;
         newElement.dataset.wkbId = id;
-        newElement.innerHTML = '😭🛡 🔥🔥🔥';
+        newElement.innerHTML = this.emoGuardian;
 
         this.toxicMap.set(id, element);
         this.replaceElement(element, newElement);

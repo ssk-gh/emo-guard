@@ -7,7 +7,9 @@ import { TargetPanel } from './target-panel';
 import { KeywordPanel } from './keyword-panel';
 import BlockIcon from '@mui/icons-material/Block';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import { CssSelector, Site } from '../App';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { CssSelector, DefaultTarget, Site } from '../App';
+import { SettingsPanel } from './settings-panel';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -47,11 +49,15 @@ interface BasicTabsProps {
     sites: Site[];
     currentSiteIndex: number;
     activeDomain: string;
+    emoGuardian: string;
+    defaultTarget: DefaultTarget;
     setKeywords(keywords: string[]): void;
     setSelectors(selectors: CssSelector[]): void;
     setSites(sites: Site[]): void;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
+    setEmoGuardian(emoGuardian: string): void;
+    setDefaultTarget(defaultTarget: DefaultTarget): void;
     getJoinedSelector(): string;
     currentIsActiveDomain(): boolean;
 }
@@ -69,6 +75,7 @@ export default function BasicTabs(props: BasicTabsProps) {
                 <Tabs value={value} onChange={handleChange} variant="fullWidth" aria-label="basic tabs example">
                     <Tab icon={<FindInPageIcon />} {...a11yProps(0)} />
                     <Tab icon={<BlockIcon />} {...a11yProps(1)} />
+                    <Tab icon={<SettingsIcon />} {...a11yProps(2)} />
                 </Tabs>
             </Box>
             <TabPanel value={value} index={0}>
@@ -91,6 +98,14 @@ export default function BasicTabs(props: BasicTabsProps) {
                     currentSite={props.sites[props.currentSiteIndex]}
                     setKeywords={props.setKeywords}
                 ></KeywordPanel>
+            </TabPanel>
+            <TabPanel value={value} index={2}>
+                <SettingsPanel
+                    emoGuardian={props.emoGuardian}
+                    defaultTarget={props.defaultTarget}
+                    setEmoGuardian={props.setEmoGuardian}
+                    setDefaultTarget={props.setDefaultTarget}
+                ></SettingsPanel>
             </TabPanel>
         </Box>
     );

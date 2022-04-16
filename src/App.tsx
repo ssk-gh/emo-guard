@@ -8,6 +8,8 @@ export interface AppState {
   sites: Site[];
   currentSiteIndex: number;
   activeDomain: string;
+  emoGuardian: string;
+  defaultTarget: DefaultTarget;
 }
 
 export interface Site {
@@ -21,6 +23,8 @@ export interface CssSelector {
   visibility: boolean;
 }
 
+export type DefaultTarget = 'this site' | 'all sites';
+
 class App extends React.Component<{}, AppState> {
   constructor(props = {}) {
     super(props);
@@ -28,18 +32,20 @@ class App extends React.Component<{}, AppState> {
       keywords: [],
       sites: [
         {
-          domain: 'default',
+          domain: 'All sites',
           enabled: true,
           cssSelectors: []
         }
       ],
       currentSiteIndex: 0,
-      activeDomain: ''
+      activeDomain: '',
+      emoGuardian: '',
+      defaultTarget: 'this site'
     };
   }
 
   async componentDidMount() {
-    const data = await getStorageAsync(['keywords', 'defaultSelectors', 'sites', 'interactiveSelector']);
+    const data = await getStorageAsync(['keywords', 'sites', 'interactiveSelector', 'emoGuardian', 'defaultTarget']);
     const keywords = (data.keywords ?? []) as string[];
     this.setState({ keywords: keywords });
 
@@ -81,10 +87,19 @@ class App extends React.Component<{}, AppState> {
       this.setSites(newSites);
       chrome.storage.sync.set({ interactiveSelector: '' });
     }
+
+    const emoGuardian = data.emoGuardian ?? '';
+    this.setState({ emoGuardian: emoGuardian });
+
+    const defaultTarget = data.defaultTarget ?? 'this site';
+    this.setState({ defaultTarget: defaultTarget });
+    if (defaultTarget === 'all sites') {
+      this.setState({ currentSiteIndex: 0 });
+    }
   }
 
   getJoinedSelector = (): string => {
-    const defaultSelectors = this.state.sites.find(site => site.domain === 'default')?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
+    const defaultSelectors = this.state.sites.find(site => site.domain === 'All sites')?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
     const domainSelectors = this.state.sites[this.state.currentSiteIndex].cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
     return defaultSelectors.concat(domainSelectors).join(',');
   }
@@ -118,9 +133,18 @@ class App extends React.Component<{}, AppState> {
     this.setState({ currentSiteIndex: index });
   }
 
+  setEmoGuardian = (emoGuardian: string) => {
+    this.setState({ emoGuardian: emoGuardian });
+  }
+
+  setDefaultTarget = (defaultTarget: DefaultTarget) => {
+    this.setState({ defaultTarget: defaultTarget });
+    chrome.storage.sync.set({ defaultTarget: defaultTarget });
+  }
+
   currentIsActiveDomain = () => {
     const currentDomain = this.state.sites[this.state.currentSiteIndex].domain;
-    return currentDomain === this.state.activeDomain || currentDomain === 'default';
+    return currentDomain === this.state.activeDomain || currentDomain === 'All sites';
   }
 
   render() {
@@ -131,11 +155,15 @@ class App extends React.Component<{}, AppState> {
           sites={this.state.sites}
           currentSiteIndex={this.state.currentSiteIndex}
           activeDomain={this.state.activeDomain}
+          emoGuardian={this.state.emoGuardian}
+          defaultTarget={this.state.defaultTarget}
           setKeywords={this.setKeywords}
           setSelectors={this.setSelectors}
           setSites={this.setSites}
           setCurrentSite={this.setCurrentSite}
           setCurrentSiteIndex={this.setCurrentSiteIndex}
+          setEmoGuardian={this.setEmoGuardian}
+          setDefaultTarget={this.setDefaultTarget}
           getJoinedSelector={this.getJoinedSelector}
           currentIsActiveDomain={this.currentIsActiveDomain}
         ></BasicTabs>
