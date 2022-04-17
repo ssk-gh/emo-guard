@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import BasicTabs from './components/basic-tab';
+import { AppConstants } from './constants/app-constants';
 import { getActiveTabAsync, getStorageAsync } from './utils/chrome-async';
 
 export interface AppState {
@@ -32,7 +33,7 @@ class App extends React.Component<{}, AppState> {
       keywords: [],
       sites: [
         {
-          domain: 'All sites',
+          domain: AppConstants.AllSites,
           enabled: true,
           cssSelectors: []
         }
@@ -40,7 +41,7 @@ class App extends React.Component<{}, AppState> {
       currentSiteIndex: 0,
       activeDomain: '',
       emoGuardian: '',
-      defaultTarget: 'this site'
+      defaultTarget: AppConstants.ThisSite
     };
   }
 
@@ -91,8 +92,8 @@ class App extends React.Component<{}, AppState> {
 
     const defaultTarget = data.defaultTarget ?? this.state.defaultTarget;
     this.setState({ defaultTarget: defaultTarget });
-    if (defaultTarget === 'all sites') {
-      const allSitesIndex = this.state.sites.findIndex(site => site.domain === 'All sites');
+    if (defaultTarget === AppConstants.AllSites) {
+      const allSitesIndex = this.state.sites.findIndex(site => site.domain === AppConstants.AllSites);
       if (allSitesIndex >= 0) {
         this.setState({ currentSiteIndex: allSitesIndex });
       }
@@ -100,7 +101,7 @@ class App extends React.Component<{}, AppState> {
   }
 
   getJoinedSelector = (): string => {
-    const defaultSelectors = this.state.sites.find(site => site.domain === 'All sites')?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
+    const defaultSelectors = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
     const domainSelectors = this.state.sites[this.state.currentSiteIndex].cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
     return defaultSelectors.concat(domainSelectors).join(',');
   }
@@ -145,7 +146,7 @@ class App extends React.Component<{}, AppState> {
 
   currentIsActiveDomain = () => {
     const currentDomain = this.state.sites[this.state.currentSiteIndex].domain;
-    return currentDomain === this.state.activeDomain || currentDomain === 'All sites';
+    return currentDomain === this.state.activeDomain || currentDomain === AppConstants.AllSites;
   }
 
   render() {

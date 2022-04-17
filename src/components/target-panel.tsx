@@ -5,6 +5,7 @@ import AllOutIcon from '@mui/icons-material/AllOut';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
 import { CssSelector, Site } from '../App';
 import { SelectorPanel } from './selector-panel';
+import { AppConstants } from '../constants/app-constants';
 
 interface TargetPanelProps {
     sites: Site[];
@@ -39,7 +40,7 @@ class TargetPanel extends React.Component<TargetPanelProps> {
     }
 
     render() {
-        const currentIsAllSites = this.props.currentSite.domain === 'All sites';
+        const currentIsAllSites = this.props.currentSite.domain === AppConstants.AllSites;
         const powerSettingsButton = currentIsAllSites
             ? (
                 <IconButton sx={{ padding: 0, mr: 1 }} disabled>
@@ -61,7 +62,13 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                     <Box justifyContent="center" sx={{ display: 'flex', alignItems: 'center' }}>
                         {powerSettingsButton}
                         <TargetAutocomplete
-                            value={{ label: this.props.currentSite.domain, index: this.props.currentSiteIndex }}
+                            value={{
+                                id: this.props.currentSite.domain,
+                                label: this.props.currentSite.domain === AppConstants.AllSites
+                                    ? chrome.i18n.getMessage('allSitesRadioButtonLabel')
+                                    : this.props.currentSite.domain,
+                                index: this.props.currentSiteIndex
+                            }}
                             activeDomain={this.props.activeDomain}
                             sites={this.props.sites}
                             currentSiteIndex={this.props.currentSiteIndex}
@@ -83,7 +90,7 @@ class TargetPanel extends React.Component<TargetPanelProps> {
 }
 
 interface TargetAutocompleteProps {
-    value: { label: string, index: number };
+    value: { id: string, label: string, index: number };
     activeDomain: string;
     sites: Site[];
     currentSiteIndex: number;
@@ -92,34 +99,44 @@ interface TargetAutocompleteProps {
 
 interface TargetAutocompleteState {
     inputValue: string;
+    allSiteLabel: string;
 }
 
 class TargetAutocomplete extends React.Component<TargetAutocompleteProps, TargetAutocompleteState> {
     state: TargetAutocompleteState = {
-        inputValue: ''
+        inputValue: '',
+        allSiteLabel: chrome.i18n.getMessage('allSitesRadioButtonLabel')
     };
 
     getOptions() {
-        return this.props.sites.map((site, index) => ({ label: site.domain, index: index }));
+        return this.props.sites.map((site, index) => {
+            const label = site.domain === AppConstants.AllSites
+                ? this.state.allSiteLabel
+                : site.domain;
+            return { id: site.domain, label: label, index: index };
+        });
     }
 
     isActiveDomain(domain: string) {
         return domain === this.props.activeDomain;
     }
 
-    getFontColor(domain: string) {
-        switch (domain) {
+    getFontColor(id: string) {
+        switch (id) {
             case this.props.activeDomain:
                 return { color: '#1976d2' };
-            case 'All sites':
+            case AppConstants.AllSites:
                 return { color: '#9c27b0' };
             default:
                 return undefined;
         }
     }
 
-    getInputFontColor(domain: string) {
-        const fontColor = this.getFontColor(domain);
+    getInputFontColor(inputValue: string) {
+        const id = inputValue === this.state.allSiteLabel
+            ? AppConstants.AllSites
+            : inputValue;
+        const fontColor = this.getFontColor(id);
         return fontColor
             ? { input: fontColor }
             : undefined;
@@ -142,14 +159,14 @@ class TargetAutocomplete extends React.Component<TargetAutocompleteProps, Target
                 }}
                 options={this.getOptions()}
                 renderOption={(props, option) => (
-                    <li {...props} style={this.getFontColor(option.label)}>
+                    <li {...props} style={this.getFontColor(option.id)}>
                         {option.label}
                     </li>
                 )}
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        label="Target"
+                        label={chrome.i18n.getMessage('targetTextFieldLabel')}
                         variant="standard"
                         sx={this.getInputFontColor(this.state.inputValue)}
                     />
