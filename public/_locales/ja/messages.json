@@ -1,0 +1,32 @@
+{
+    "targetTextFieldLabel": {
+        "message": "ターゲット"
+    },
+    "selectorTextFieldLabel": {
+        "message": "CSSセレクタを追加"
+    },
+    "keywordTextFieldLabel": {
+        "message": "キーワードを追加"
+    },
+    "emoGuardianTextFieldLabel": {
+        "message": "絵文字"
+    },
+    "emoGuardianFormHelperText": {
+        "message": "入力された絵文字で要素や文字列を隠します。"
+    },
+    "defaultTargetFormLabel": {
+        "message": "デフォルトターゲット"
+    },
+    "defaultTargetFormHelperText": {
+        "message": "拡張機能を開いた時のターゲットを指定します。"
+    },
+    "thisSiteRadioButtonLabel": {
+        "message": "閲覧中のサイト"
+    },
+    "allSitesRadioButtonLabel": {
+        "message": "全てのサイト"
+    },
+    "selectorRegistrationAlert": {
+        "message": "CSSセレクタを登録しました！:"
+    }
+}

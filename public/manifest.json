@@ -3,6 +3,7 @@
   "description": "Have a safe web journey.",
   "version": "1.0.0",
   "manifest_version": 3,
+  "default_locale": "en",
   "permissions": [
     "storage",
     "scripting",

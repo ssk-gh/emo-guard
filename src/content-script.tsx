@@ -1,4 +1,5 @@
 import { Site } from "./App";
+import { AppConstants } from "./constants/app-constants";
 import { getStorageAsync } from "./utils/chrome-async";
 
 class ContentScript {
@@ -76,7 +77,7 @@ class ContentScript {
         const emoGuardian = data.emoGuardian ?? '';
 
         const sites = data.sites as Site[];
-        const defaultSelectors = sites.find(site => site.domain === 'All sites')?.cssSelectors;
+        const defaultSelectors = sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors;
         const filteredDefaultSelectors = defaultSelectors?.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
         const domain = sites.find(site => site.domain === window.location.hostname);
         const enabled = domain ? domain.enabled : true;
@@ -289,7 +290,14 @@ class ContentScript {
         chrome.storage.sync.set({ interactiveSelector: selector });
 
         this.hideElements(selector, this.keywords);
-        alert(`CSSセレクタを登録しました！\n\n${selector}`);
+        const message = `${chrome.i18n.getMessage("selectorRegistrationAlert")}
+------------------------------------------------------------
+
+${selector}
+
+------------------------------------------------------------
+by ${AppConstants.AppName}`;
+        alert(message);
 
         this.endInteractiveMode();
     }

@@ -1,0 +1,32 @@
+{
+    "targetTextFieldLabel": {
+        "message": "Target"
+    },
+    "selectorTextFieldLabel": {
+        "message": "Enter any css selectors"
+    },
+    "keywordTextFieldLabel": {
+        "message": "Enter any keywords"
+    },
+    "emoGuardianTextFieldLabel": {
+        "message": "EmoGuardian"
+    },
+    "emoGuardianFormHelperText": {
+        "message": "Hides elements or strings with the specified emoji."
+    },
+    "defaultTargetFormLabel": {
+        "message": "Default Target"
+    },
+    "defaultTargetFormHelperText": {
+        "message": "Specifies the target when this extension is opened."
+    },
+    "thisSiteRadioButtonLabel": {
+        "message": "The site you are browsing"
+    },
+    "allSitesRadioButtonLabel": {
+        "message": "All sites"
+    },
+    "selectorRegistrationAlert": {
+        "message": "CSS selector is now registered!:"
+    }
+}

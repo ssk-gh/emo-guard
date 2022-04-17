@@ -85,7 +85,7 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
                 </Grid>
                 <Grid item xs={12}>
                     <TextField
-                        label="キーワードを追加"
+                        label={chrome.i18n.getMessage('keywordTextFieldLabel')}
                         variant='filled'
                         fullWidth
                         value={this.state.keyword}

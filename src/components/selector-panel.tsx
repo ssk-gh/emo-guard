@@ -169,7 +169,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                 </Grid>
                 <Grid item xs={12}>
                     <TextField
-                        label="CSSセレクタを追加"
+                        label={chrome.i18n.getMessage('selectorTextFieldLabel')}
                         variant='filled'
                         fullWidth
                         value={this.state.selector}
