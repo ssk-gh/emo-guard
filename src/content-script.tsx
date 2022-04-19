@@ -9,11 +9,12 @@ class ContentScript {
     idleObserver!: MutationObserver;
     enabled: boolean = true;
     keywords: string[] = [];
-    selector: string = '';
+    elementHideSelector: string = '';
+    textHideSelector: string = '';
     mutationCount: number = 0;
     emoGuardian: string = '';
 
-    constructor(enabled: boolean, keywords: string[], selector: string, emoGuardian: string) {
+    constructor(enabled: boolean, keywords: string[], elementHideSelector: string, textHideSelector: string, emoGuardian: string) {
         const targetNode = document.documentElement;
         if (!targetNode) {
             return;
@@ -21,7 +22,8 @@ class ContentScript {
 
         this.enabled = enabled;
         this.keywords = keywords;
-        this.selector = selector;
+        this.elementHideSelector = elementHideSelector;
+        this.textHideSelector = textHideSelector;
         this.emoGuardian = emoGuardian;
 
         const options: MutationObserverInit = { childList: true, subtree: true };
@@ -32,7 +34,8 @@ class ContentScript {
         window.addEventListener('DOMContentLoaded', (event) => {
             this.detoxificationQueue.forEach(detoxify => detoxify());
             this.loadingObserver.disconnect();
-            this.hideElements(this.selector, this.keywords);
+            this.hideElements(this.elementHideSelector, this.keywords, this.detoxifyElement);
+            this.hideElements(this.textHideSelector, this.keywords, this.detoxifyText);
 
             this.idleObserver = this.buildIdleObserver();
             this.idleObserver.observe(targetNode, options);
@@ -44,7 +47,10 @@ class ContentScript {
                     this.handleDeleteSelector(message.args[0]);
                     break;
                 case 'hideElements':
-                    this.hideElements(message.args[0], message.args[1])
+                    this.hideElements(message.args[0], message.args[1], this.detoxifyElement);
+                    break;
+                case 'hideText':
+                    this.hideElements(message.args[0], message.args[1], this.detoxifyText);
                     break;
                 case 'handleDeleteKeyword':
                     this.handleDeleteKeyword(message.args[0]);
@@ -55,8 +61,11 @@ class ContentScript {
                 case 'updateKeywords':
                     this.keywords = message.args[0];
                     break;
-                case 'updateJoinedSelector':
-                    this.selector = message.args[0];
+                case 'updateElementHideSelector':
+                    this.elementHideSelector = message.args[0];
+                    break;
+                case 'updateTextHideSelector':
+                    this.textHideSelector = message.args[0];
                     break;
                 case 'enableInteractiveMode':
                     this.startInteractiveMode();
@@ -77,26 +86,49 @@ class ContentScript {
         const emoGuardian = data.emoGuardian ?? '';
 
         const sites = data.sites as Site[];
-        const defaultSelectors = sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors;
-        const filteredDefaultSelectors = defaultSelectors?.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
-        const domain = sites.find(site => site.domain === window.location.hostname);
-        const enabled = domain ? domain.enabled : true;
-        const domainSelectors = domain?.cssSelectors ?? [];
-        const filteredDomainSelectors = domainSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
-        const selector = filteredDefaultSelectors.concat(filteredDomainSelectors).join(',') ?? '';
+        const selectorsForAllSites = sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors;
+        const elementHideSelectorsForAllSites = selectorsForAllSites
+            ?.filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
+            .map(selector => selector.value)
+            ?? [];
+        const textHideSelectorsForAllSites = selectorsForAllSites
+            ?.filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
+            .map(selector => selector.value)
+            ?? [];
 
-        return new ContentScript(enabled, keywords, selector, emoGuardian);
+        const thisSite = sites.find(site => site.domain === window.location.hostname);
+        const enabled = thisSite ? thisSite.enabled : true;
+        const selectorsForThisSite = thisSite?.cssSelectors ?? [];
+        const elementHideSelectorsForThisSite = selectorsForThisSite
+            .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
+            .map(selector => selector.value);
+        const textHideSelectorsForThisSite = selectorsForThisSite
+            .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
+            .map(selector => selector.value);
+
+        const elementHideSelector = elementHideSelectorsForAllSites.concat(elementHideSelectorsForThisSite).join(',') ?? '';
+        const textHideSelector = textHideSelectorsForAllSites.concat(textHideSelectorsForThisSite).join(',') ?? '';
+
+        return new ContentScript(enabled, keywords, elementHideSelector, textHideSelector, emoGuardian);
     }
 
     private buildLoadingObserver = (): MutationObserver => {
+        const addToQueue = (selector: string, detoxify: (element: HTMLElement) => void) => {
+            if (!selector) {
+                return;
+            }
+
+            this.searchLatestToxicElements(selector, this.keywords).forEach(element => {
+                element.style.visibility = 'hidden';
+                this.detoxificationQueue = this.detoxificationQueue.concat([() => detoxify(element)])
+            });
+        }
+
         return new MutationObserver((mutations, observer) => {
             if (!this.enabled) {
                 return;
             }
             if (!this.keywords.length) {
-                return;
-            }
-            if (!this.selector) {
                 return;
             }
             if (!this.hasElementNode(mutations)) {
@@ -104,18 +136,32 @@ class ContentScript {
             }
 
             this.mutationCount++;
-            if (this.mutationCount % 5 !== 0) {
+            if (this.mutationCount > 5 && this.mutationCount % 10 !== 0) {
                 return;
             }
 
-            this.searchToxicElements(this.selector, this.keywords).forEach(element => {
-                element.style.visibility = 'hidden';
-                this.detoxificationQueue = this.detoxificationQueue.concat([() => this.detoxify(element)])
-            });
+            addToQueue(this.elementHideSelector, this.detoxifyElement);
+            addToQueue(this.textHideSelector, this.detoxifyText);
         });
     }
 
     private buildIdleObserver = (): MutationObserver => {
+        const ensureSafety = (selector: string, detoxify: (element: HTMLElement) => void) => {
+            if (!selector) {
+                return;
+            }
+
+            this.searchToxicElements(selector, this.keywords)
+                .forEach(element => {
+                    const id = element.dataset.wkbId;
+                    if (id) {
+                        this.replaceElement(element, this.toxicMap.get(id)!);
+                    } else {
+                        detoxify(element)
+                    }
+                });
+        }
+
         return new MutationObserver((mutations, observer) => {
             if (!this.enabled) {
                 return;
@@ -123,26 +169,12 @@ class ContentScript {
             if (!this.keywords.length) {
                 return;
             }
-            if (!this.selector) {
-                return;
-            }
             if (!this.hasElementNode(mutations)) {
                 return;
             }
 
-            Array
-                .from(document.querySelectorAll<HTMLElement>(this.selector))
-                .filter(element =>
-                    element.style.visibility !== 'hidden'
-                    && (this.includesKeyword(element, this.keywords) || this.includesInnerSafe(element)))
-                .forEach(element => {
-                    const id = element.dataset.wkbId;
-                    if (id) {
-                        this.replaceElement(element, this.toxicMap.get(id)!);
-                    } else {
-                        this.detoxify(element)
-                    }
-                });
+            ensureSafety(this.elementHideSelector, this.detoxifyElement);
+            ensureSafety(this.textHideSelector, this.detoxifyText);
         });
     }
 
@@ -201,7 +233,7 @@ class ContentScript {
             })
     }
 
-    private hideElements = (selector: string, keywords: string[]): void => {
+    private hideElements = (selector: string, keywords: string[], detoxify: (element: HTMLElement) => void): void => {
         if (!this.enabled) {
             return;
         }
@@ -209,8 +241,8 @@ class ContentScript {
             return;
         }
 
-        this.searchToxicElements(selector, keywords)
-            .forEach(element => this.detoxify(element))
+        this.searchLatestToxicElements(selector, keywords)
+            .forEach(element => detoxify(element))
     }
 
     private searchToxicElements = (selector: string, keywords: string[]): HTMLElement[] =>
@@ -218,8 +250,11 @@ class ContentScript {
             .from(document.querySelectorAll<HTMLElement>(selector))
             .filter(element =>
                 element.style.visibility !== 'hidden'
-                && !this.hasDetoxified(element)
                 && (this.includesKeyword(element, keywords) || this.includesInnerSafe(element)));
+
+    private searchLatestToxicElements = (selector: string, keywords: string[]): HTMLElement[] =>
+        this.searchToxicElements(selector, keywords)
+            .filter(element => !this.hasDetoxified(element));
 
     private hasDetoxified = (element: HTMLElement): boolean =>
         element.dataset.wkbId != null && element.dataset.wkbId !== '';
@@ -231,13 +266,26 @@ class ContentScript {
     private includesInnerSafe = (element: HTMLElement): boolean =>
         Array.from(this.toxicMap.keys()).some(id => element.innerHTML.includes(id));
 
-    private detoxify = (element: HTMLElement): void => {
+    private detoxifyElement = (element: HTMLElement): void => {
         element.style.visibility = 'visible';
 
         const newElement = element.cloneNode() as HTMLElement;
         const id = `wkb-${Math.random().toString(32).substring(2)}`;
         newElement.dataset.wkbId = id;
         newElement.innerHTML = this.emoGuardian;
+
+        this.toxicMap.set(id, element);
+        this.replaceElement(element, newElement);
+    }
+
+    private detoxifyText = (element: HTMLElement): void => {
+        element.style.visibility = 'visible';
+
+        const newElement = element.cloneNode(true) as HTMLElement;
+        const id = `wkb-${Math.random().toString(32).substring(2)}`;
+        newElement.dataset.wkbId = id;
+        const searchKeyword = new RegExp(this.keywords.join('|'), 'gi');
+        newElement.innerHTML = newElement.innerHTML.replace(searchKeyword, this.emoGuardian);
 
         this.toxicMap.set(id, element);
         this.replaceElement(element, newElement);
@@ -289,7 +337,7 @@ class ContentScript {
         const selector = this.buildSelectorFrom(element);
         chrome.storage.sync.set({ interactiveSelector: selector });
 
-        this.hideElements(selector, this.keywords);
+        this.hideElements(selector, this.keywords, this.detoxifyElement);
         const message = `${chrome.i18n.getMessage("selectorRegistrationAlert")}
 ------------------------------------------------------------
 

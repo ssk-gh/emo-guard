@@ -5,6 +5,12 @@
     "selectorTextFieldLabel": {
         "message": "CSSセレクタを追加"
     },
+    "elementHideModeDescription": {
+        "message": "キーワードと一致した要素を隠す"
+    },
+    "textHideModeDescription": {
+        "message": "キーワードと一致したテキストを隠す"
+    },
     "keywordTextFieldLabel": {
         "message": "キーワードを追加"
     },

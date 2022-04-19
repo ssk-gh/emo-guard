@@ -58,7 +58,8 @@ interface BasicTabsProps {
     setCurrentSiteIndex(index: number): void;
     setEmoGuardian(emoGuardian: string): void;
     setDefaultTarget(defaultTarget: DefaultTarget): void;
-    getJoinedSelector(): string;
+    getElementHideSelector(): string;
+    getTextHideSelector(): string;
     currentIsActiveDomain(): boolean;
 }
 
@@ -88,7 +89,8 @@ export default function BasicTabs(props: BasicTabsProps) {
                     setCurrentSite={props.setCurrentSite}
                     setCurrentSiteIndex={props.setCurrentSiteIndex}
                     setSelectors={props.setSelectors}
-                    getJoinedSelector={props.getJoinedSelector}
+                    getElementHideSelector={props.getElementHideSelector}
+                    getTextHideSelector={props.getTextHideSelector}
                     currentIsActiveDomain={props.currentIsActiveDomain}
                 ></TargetPanel>
             </TabPanel>
@@ -97,6 +99,8 @@ export default function BasicTabs(props: BasicTabsProps) {
                     keywords={props.keywords}
                     currentSite={props.sites[props.currentSiteIndex]}
                     setKeywords={props.setKeywords}
+                    getElementHideSelector={props.getElementHideSelector}
+                    getTextHideSelector={props.getTextHideSelector}
                 ></KeywordPanel>
             </TabPanel>
             <TabPanel value={value} index={2}>

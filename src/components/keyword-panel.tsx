@@ -8,6 +8,8 @@ interface KeywordProps {
     keywords: string[];
     currentSite: Site;
     setKeywords(keywords: string[]): void;
+    getElementHideSelector(): string;
+    getTextHideSelector(): string;
 }
 
 interface KeywordState {
@@ -30,8 +32,8 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
             if (activeTab.id) {
                 await sendMessageToTabAsync(activeTab.id, { callee: 'updateKeywords', args: [keywords] });
 
-                const selector = this.props.currentSite?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value).join(',');
-                sendMessageToTabAsync(activeTab.id, { callee: 'hideElements', args: [selector, [this.state.keyword]] });
+                sendMessageToTabAsync(activeTab.id, { callee: 'hideElements', args: [this.props.getElementHideSelector(), [this.state.keyword]] });
+                sendMessageToTabAsync(activeTab.id, { callee: 'hideText', args: [this.props.getTextHideSelector(), [this.state.keyword]] });
             }
 
             this.setState({ keyword: '' });

@@ -21,6 +21,7 @@ export interface Site {
 
 export interface CssSelector {
   value: string;
+  hideMode: number;
   visibility: boolean;
 }
 
@@ -80,7 +81,7 @@ class App extends React.Component<{}, AppState> {
     if (data.interactiveSelector) {
       const newSites = this.state.sites.slice();
       newSites[this.state.currentSiteIndex].cssSelectors = newSites[this.state.currentSiteIndex].cssSelectors.concat([
-        { value: data.interactiveSelector, visibility: false }
+        { value: data.interactiveSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
       ]);
 
       this.setSites(newSites);
@@ -100,10 +101,28 @@ class App extends React.Component<{}, AppState> {
     }
   }
 
-  getJoinedSelector = (): string => {
-    const defaultSelectors = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value) ?? [];
-    const domainSelectors = this.state.sites[this.state.currentSiteIndex].cssSelectors.filter(selector => !selector.visibility).map(selector => selector.value);
-    return defaultSelectors.concat(domainSelectors).join(',');
+  getElementHideSelector = (): string => {
+    const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
+      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
+      .map(selector => selector.value)
+      ?? [];
+    const selectorsForThisSite = this.state.sites[this.state.currentSiteIndex].cssSelectors
+      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
+      .map(selector => selector.value);
+
+    return selectorsForAllSites.concat(selectorsForThisSite).join(',');
+  }
+
+  getTextHideSelector = (): string => {
+    const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
+      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
+      .map(selector => selector.value)
+      ?? [];
+    const selectorsForThisSite = this.state.sites[this.state.currentSiteIndex].cssSelectors
+      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
+      .map(selector => selector.value);
+
+    return selectorsForAllSites.concat(selectorsForThisSite).join(',');
   }
 
   setKeywords = (keywords: string[]) => {
@@ -144,6 +163,11 @@ class App extends React.Component<{}, AppState> {
     chrome.storage.sync.set({ defaultTarget: defaultTarget });
   }
 
+  setToStateAndStorage = (state: AppState) => {
+    this.setState(state);
+    chrome.storage.sync.set(state);
+  }
+
   currentIsActiveDomain = () => {
     const currentDomain = this.state.sites[this.state.currentSiteIndex].domain;
     return currentDomain === this.state.activeDomain || currentDomain === AppConstants.AllSites;
@@ -166,7 +190,8 @@ class App extends React.Component<{}, AppState> {
           setCurrentSiteIndex={this.setCurrentSiteIndex}
           setEmoGuardian={this.setEmoGuardian}
           setDefaultTarget={this.setDefaultTarget}
-          getJoinedSelector={this.getJoinedSelector}
+          getElementHideSelector={this.getElementHideSelector}
+          getTextHideSelector={this.getTextHideSelector}
           currentIsActiveDomain={this.currentIsActiveDomain}
         ></BasicTabs>
       </div>

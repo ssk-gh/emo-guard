@@ -5,6 +5,12 @@
     "selectorTextFieldLabel": {
         "message": "Enter any css selectors"
     },
+    "elementHideModeDescription": {
+        "message": "Hides elements matching keywords"
+    },
+    "textHideModeDescription": {
+        "message": "Hides text matching keywords"
+    },
     "keywordTextFieldLabel": {
         "message": "Enter any keywords"
     },

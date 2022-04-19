@@ -16,7 +16,8 @@ interface TargetPanelProps {
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
     setSelectors(selectors: CssSelector[]): void;
-    getJoinedSelector(): string;
+    getElementHideSelector(): string;
+    getTextHideSelector(): string;
     currentIsActiveDomain(): boolean;
 }
 
@@ -81,7 +82,8 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                     keywords={this.props.keywords}
                     listHeight={330}
                     setSelectors={this.props.setSelectors}
-                    getJoinedSelector={this.props.getJoinedSelector}
+                    getElementHideSelector={this.props.getElementHideSelector}
+                    getTextHideSelector={this.props.getTextHideSelector}
                     currentIsActiveDomain={this.props.currentIsActiveDomain}
                 ></SelectorPanel>
             </Grid>
