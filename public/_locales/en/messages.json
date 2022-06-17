@@ -1,9 +1,30 @@
 {
-    "targetTextFieldLabel": {
+    "options": {
+        "message": "Options"
+    },
+    "reset": {
+        "message": "Reset"
+    },
+    "cancel": {
+        "message": "Cancel"
+    },
+    "export": {
+        "message": "Export"
+    },
+    "target": {
         "message": "Target"
+    },
+    "interval": {
+        "message": "Interval"
     },
     "selectorTextFieldLabel": {
         "message": "Enter any css selectors"
+    },
+    "selectorFormatError": {
+        "message": "Incorrect format of CSS selector."
+    },
+    "selectorAlreadyExistsError": {
+        "message": "This CSS selector already exists."
     },
     "elementHideModeDescription": {
         "message": "Hides elements matching keywords"
@@ -11,8 +32,14 @@
     "textHideModeDescription": {
         "message": "Hides text matching keywords"
     },
+    "showKeywordList": {
+        "message": "Show keyword list"
+    },
     "keywordTextFieldLabel": {
         "message": "Enter any keywords"
+    },
+    "keywordError": {
+        "message": "This keyword cannot be added."
     },
     "emoGuardianTextFieldLabel": {
         "message": "EmoGuardian"
@@ -32,7 +59,85 @@
     "allSitesRadioButtonLabel": {
         "message": "All sites"
     },
+    "dropboxIntegration": {
+        "message": "Dropbox Integration"
+    },
+    "integrateWithDropboxPrimary": {
+        "message": "Integrate with Dropbox"
+    },
+    "integrateWithDropboxSecondary": {
+        "message": "When Dropbox integration is enabled, import/export feature will be available."
+    },
+    "integrateWithDropboxNote": {
+        "message": "This is a feature to synchronize data between browsers from different vendors (e.g. Chrome between Safari). There is no need to use this feature between browsers from the same vendor (e.g. Chrome between Chrome, Safari between Safari), as the data will be synchronized by the browser's built-in functionality."
+    },
+    "integrateWithDropboxButton": {
+        "message": "Integrate"
+    },
+    "revokeDropboxIntegrationButton": {
+        "message": "Revoke"
+    },
+    "enableAutoImportPrimary": {
+        "message": "Enable auto import"
+    },
+    "enableAutoImportSecondary": {
+        "message": "Continuously imports data that is exported to Dropbox."
+    },
+    "exportToDropboxPrimary": {
+        "message": "Export to Dropbox"
+    },
+    "exportToDropboxSecondary": {
+        "message": "Exports app data to dropbox. You can import the exported data by enabling auto import in other browsers."
+    },
+    "lastExport": {
+        "message": "Last export"
+    },
+    "autoImportConfirmDialogTitle": {
+        "message": "Do you want to enable auto import?"
+    },
+    "autoImportConfirmDialogText": {
+        "message": "After enabling auto import, all CSS selectors and keywords set in this browser will be removed, and the exported data will be loaded from Dropbox storage instead. Also, you will not be able to edit CSS selectors and keywords in this browser."
+    },
+    "autoImportInterval": {
+        "message": "Auto import interval"
+    },
+    "lastImport": {
+        "message": "Last import"
+    },
+    "appSettings": {
+        "message": "App Settings"
+    },
+    "resetRecommendSelectorPrimary": {
+        "message": "Reset recommended CSS selectors"
+    },
+    "resetRecommendSelectorSecondary": {
+        "message": "Resets the following CSS selectors to their installation settings."
+    },
+    "resetRecommendSelectorConfirmDialogTitle": {
+        "message": "Do you want to reset the recommended CSS selectors?"
+    },
+    "resetRecommendSelectorConfirmDialogText": {
+        "message": "Resets the recommended CSS selector to the settings at the time of installation. This operation cannot be undone."
+    },
     "selectorRegistrationAlert": {
         "message": "CSS selector is now registered!:"
+    },
+    "fiveMinutes": {
+        "message": "5 minutes"
+    },
+    "fifteenMinutes": {
+        "message": "15 minutes"
+    },
+    "thirtyMinutes": {
+        "message": "30 minutes"
+    },
+    "oneHour": {
+        "message": "1 hour"
+    },
+    "sixHours": {
+        "message": "6 hours"
+    },
+    "1Day": {
+        "message": "1 day"
     }
 }

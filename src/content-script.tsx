@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { Site } from "./App";
 import { AppConstants } from "./constants/app-constants";
 import { getStorageAsync } from "./utils/chrome-async";
@@ -13,6 +14,8 @@ class ContentScript {
     textHideSelector: string = '';
     mutationCount: number = 0;
     emoGuardian: string = '';
+    hasLoaded: boolean = false;
+    static readonly mutationObserverOptions: MutationObserverInit = { childList: true, subtree: true };
 
     constructor(enabled: boolean, keywords: string[], elementHideSelector: string, textHideSelector: string, emoGuardian: string) {
         const targetNode = document.documentElement;
@@ -26,20 +29,15 @@ class ContentScript {
         this.textHideSelector = textHideSelector;
         this.emoGuardian = emoGuardian;
 
-        const options: MutationObserverInit = { childList: true, subtree: true };
-
         this.loadingObserver = this.buildLoadingObserver();
-        this.loadingObserver.observe(targetNode, options);
+        this.loadingObserver.observe(targetNode, ContentScript.mutationObserverOptions);
 
         window.addEventListener('DOMContentLoaded', (event) => {
-            this.detoxificationQueue.forEach(detoxify => detoxify());
-            this.loadingObserver.disconnect();
-            this.hideElements(this.elementHideSelector, this.keywords, this.detoxifyElement);
-            this.hideElements(this.textHideSelector, this.keywords, this.detoxifyText);
-
-            this.idleObserver = this.buildIdleObserver();
-            this.idleObserver.observe(targetNode, options);
+            this.handleLoad(targetNode);
         });
+        window.onload = () => {
+            this.handleLoad(targetNode);
+        };
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             switch (message.callee) {
@@ -81,11 +79,15 @@ class ContentScript {
     }
 
     public static async build(): Promise<ContentScript> {
-        const data = await getStorageAsync(['keywords', 'sites', 'emoGuardian']);
-        const keywords = (data.keywords ?? []) as string[];
-        const emoGuardian = data.emoGuardian ?? '';
+        const syncData = await getStorageAsync(['keywords', 'sites', 'emoGuardian']);
+        const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'autoImportEnabled']);
 
-        const sites = data.sites as Site[];
+        const autoImportEnabled = (localData.autoImportEnabled ?? false) as boolean;
+        const keywords = ((autoImportEnabled ? localData.keywords : syncData.keywords) ?? []) as string[];
+        const emoGuardian = ((autoImportEnabled ? localData.emoGuardian : syncData.emoGuardian) ?? '') as string;
+        const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
+
+        const sites = ((autoImportEnabled ? localData.sites : syncData.sites) ?? []) as Site[];
         const selectorsForAllSites = sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors;
         const elementHideSelectorsForAllSites = selectorsForAllSites
             ?.filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
@@ -109,7 +111,7 @@ class ContentScript {
         const elementHideSelector = elementHideSelectorsForAllSites.concat(elementHideSelectorsForThisSite).join(',') ?? '';
         const textHideSelector = textHideSelectorsForAllSites.concat(textHideSelectorsForThisSite).join(',') ?? '';
 
-        return new ContentScript(enabled, keywords, elementHideSelector, textHideSelector, emoGuardian);
+        return new ContentScript(enabled, keywords, elementHideSelector, textHideSelector, cleanedEmoGuardian);
     }
 
     private buildLoadingObserver = (): MutationObserver => {
@@ -120,7 +122,7 @@ class ContentScript {
 
             this.searchLatestToxicElements(selector, this.keywords).forEach(element => {
                 element.style.visibility = 'hidden';
-                this.detoxificationQueue = this.detoxificationQueue.concat([() => detoxify(element)])
+                this.detoxificationQueue = this.detoxificationQueue.concat([() => detoxify(element)]);
             });
         }
 
@@ -176,6 +178,21 @@ class ContentScript {
             ensureSafety(this.elementHideSelector, this.detoxifyElement);
             ensureSafety(this.textHideSelector, this.detoxifyText);
         });
+    }
+
+    private handleLoad = (targetNode: HTMLElement) => {
+        if (this.hasLoaded) {
+            return;
+        }
+        this.hasLoaded = true;
+
+        this.detoxificationQueue.forEach(detoxify => detoxify());
+        this.loadingObserver.disconnect();
+        this.hideElements(this.elementHideSelector, this.keywords, this.detoxifyElement);
+        this.hideElements(this.textHideSelector, this.keywords, this.detoxifyText);
+
+        this.idleObserver = this.buildIdleObserver();
+        this.idleObserver.observe(targetNode, ContentScript.mutationObserverOptions);
     }
 
     private hasElementNode = (mutations: MutationRecord[]): boolean =>
@@ -250,6 +267,7 @@ class ContentScript {
             .from(document.querySelectorAll<HTMLElement>(selector))
             .filter(element =>
                 element.style.visibility !== 'hidden'
+                && !element.dataset.wkbId
                 && (this.includesKeyword(element, keywords) || this.includesInnerSafe(element)));
 
     private searchLatestToxicElements = (selector: string, keywords: string[]): HTMLElement[] =>
@@ -260,8 +278,12 @@ class ContentScript {
         element.dataset.wkbId != null && element.dataset.wkbId !== '';
 
     private includesKeyword = (element: HTMLElement, keywords: string[]): boolean =>
-        element.textContent != null
-        && keywords.some(keyword => element.textContent?.includes(keyword));
+        keywords.some(keyword =>
+            element.textContent?.includes(keyword)
+            || this.getJoinedAttribute(element)?.includes(keyword));
+
+    private getJoinedAttribute = (element: HTMLElement): string =>
+        Array.from(element.attributes).map(attribute => attribute.value).join(',');
 
     private includesInnerSafe = (element: HTMLElement): boolean =>
         Array.from(this.toxicMap.keys()).some(id => element.innerHTML.includes(id));
@@ -269,7 +291,9 @@ class ContentScript {
     private detoxifyElement = (element: HTMLElement): void => {
         element.style.visibility = 'visible';
 
-        const newElement = element.cloneNode() as HTMLElement;
+        const newElement = element.tagName === 'IMG'
+            ? document.createElement('span')
+            : element.cloneNode() as HTMLElement;
         const id = `wkb-${Math.random().toString(32).substring(2)}`;
         newElement.dataset.wkbId = id;
         newElement.innerHTML = this.emoGuardian;
@@ -335,7 +359,7 @@ class ContentScript {
         this.restoreStyle(element);
 
         const selector = this.buildSelectorFrom(element);
-        chrome.storage.sync.set({ interactiveSelector: selector });
+        chrome.storage.local.set({ interactiveSelector: selector });
 
         this.hideElements(selector, this.keywords, this.detoxifyElement);
         const message = `${chrome.i18n.getMessage("selectorRegistrationAlert")}

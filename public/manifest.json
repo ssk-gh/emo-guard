@@ -8,7 +8,8 @@
     "storage",
     "scripting",
     "tabs",
-    "activeTab"
+    "activeTab",
+    "alarms"
   ],
   "background": {
     "service_worker": "/static/js/background.js"
@@ -17,12 +18,14 @@
     "default_popup": "index.html",
     "default_icon": {}
   },
+  "options_page": "options.html",
   "content_scripts": [
     {
       "matches": [
         "http://*/*",
         "https://*/*"
       ],
+      "all_frames": true,
       "js": [
         "/static/js/content-script.js"
       ],

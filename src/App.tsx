@@ -9,8 +9,7 @@ export interface AppState {
   sites: Site[];
   currentSiteIndex: number;
   activeDomain: string;
-  emoGuardian: string;
-  defaultTarget: DefaultTarget;
+  autoImportEnabled: boolean;
 }
 
 export interface Site {
@@ -24,8 +23,6 @@ export interface CssSelector {
   hideMode: number;
   visibility: boolean;
 }
-
-export type DefaultTarget = 'this site' | 'all sites';
 
 class App extends React.Component<{}, AppState> {
   constructor(props = {}) {
@@ -41,18 +38,32 @@ class App extends React.Component<{}, AppState> {
       ],
       currentSiteIndex: 0,
       activeDomain: '',
-      emoGuardian: '',
-      defaultTarget: AppConstants.ThisSite
+      autoImportEnabled: false
     };
   }
 
   async componentDidMount() {
-    const data = await getStorageAsync(['keywords', 'sites', 'interactiveSelector', 'emoGuardian', 'defaultTarget']);
-    const keywords = (data.keywords ?? this.state.keywords) as string[];
-    this.setState({ keywords: keywords });
+    const syncData = await getStorageAsync(['keywords', 'sites']);
+    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled', 'interactiveSelector']);
 
-    const sites = (data.sites ?? this.state.sites) as Site[];
-    this.setState({ sites: sites });
+    const autoImportEnabled = (localData.autoImportEnabled ?? this.state.autoImportEnabled) as boolean;
+    this.setState({ autoImportEnabled: autoImportEnabled });
+
+    if (autoImportEnabled) {
+      const keywords = (localData.keywords ?? this.state.keywords) as string[];
+      this.setState({ keywords: keywords });
+
+      const sites = (localData.sites ?? this.state.sites) as Site[];
+      const cleanedSites = this.removeEmptySites(sites);
+      this.setState({ sites: cleanedSites });
+    } else {
+      const keywords = (syncData.keywords ?? this.state.keywords) as string[];
+      this.setState({ keywords: keywords });
+
+      const sites = (syncData.sites ?? this.state.sites) as Site[];
+      const cleanedSites = this.removeEmptySites(sites);
+      this.setSites(cleanedSites);
+    }
 
     const activeTab = await getActiveTabAsync();
     if (!activeTab.url) {
@@ -78,28 +89,18 @@ class App extends React.Component<{}, AppState> {
       });
     }
 
-    if (data.interactiveSelector) {
+    if (localData.interactiveSelector) {
       const newSites = this.state.sites.slice();
       newSites[this.state.currentSiteIndex].cssSelectors = newSites[this.state.currentSiteIndex].cssSelectors.concat([
-        { value: data.interactiveSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
+        { value: localData.interactiveSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
       ]);
 
       this.setSites(newSites);
-      chrome.storage.sync.set({ interactiveSelector: '' });
-    }
-
-    const emoGuardian = data.emoGuardian ?? this.state.emoGuardian;
-    this.setState({ emoGuardian: emoGuardian });
-
-    const defaultTarget = data.defaultTarget ?? this.state.defaultTarget;
-    this.setState({ defaultTarget: defaultTarget });
-    if (defaultTarget === AppConstants.AllSites) {
-      const allSitesIndex = this.state.sites.findIndex(site => site.domain === AppConstants.AllSites);
-      if (allSitesIndex >= 0) {
-        this.setState({ currentSiteIndex: allSitesIndex });
-      }
+      chrome.storage.local.set({ interactiveSelector: '' });
     }
   }
+
+  removeEmptySites = (sites: Site[]) => sites.filter(site => site.cssSelectors.length || !site.enabled || site.domain === AppConstants.AllSites);
 
   getElementHideSelector = (): string => {
     const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
@@ -154,18 +155,9 @@ class App extends React.Component<{}, AppState> {
     this.setState({ currentSiteIndex: index });
   }
 
-  setEmoGuardian = (emoGuardian: string) => {
-    this.setState({ emoGuardian: emoGuardian });
-  }
-
-  setDefaultTarget = (defaultTarget: DefaultTarget) => {
-    this.setState({ defaultTarget: defaultTarget });
-    chrome.storage.sync.set({ defaultTarget: defaultTarget });
-  }
-
-  setToStateAndStorage = (state: AppState) => {
-    this.setState(state);
-    chrome.storage.sync.set(state);
+  setAutoImportEnabled = (autoImportEnabled: boolean) => {
+    this.setState({ autoImportEnabled: autoImportEnabled });
+    chrome.storage.local.set({ autoImportEnabled: autoImportEnabled });
   }
 
   currentIsActiveDomain = () => {
@@ -181,18 +173,16 @@ class App extends React.Component<{}, AppState> {
           sites={this.state.sites}
           currentSiteIndex={this.state.currentSiteIndex}
           activeDomain={this.state.activeDomain}
-          emoGuardian={this.state.emoGuardian}
-          defaultTarget={this.state.defaultTarget}
+          autoImportEnabled={this.state.autoImportEnabled}
           setKeywords={this.setKeywords}
           setSelectors={this.setSelectors}
           setSites={this.setSites}
           setCurrentSite={this.setCurrentSite}
           setCurrentSiteIndex={this.setCurrentSiteIndex}
-          setEmoGuardian={this.setEmoGuardian}
-          setDefaultTarget={this.setDefaultTarget}
           getElementHideSelector={this.getElementHideSelector}
           getTextHideSelector={this.getTextHideSelector}
           currentIsActiveDomain={this.currentIsActiveDomain}
+          setAutoImportEnabled={this.setAutoImportEnabled}
         ></BasicTabs>
       </div>
     );

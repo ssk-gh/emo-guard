@@ -7,9 +7,9 @@ import { TargetPanel } from './target-panel';
 import { KeywordPanel } from './keyword-panel';
 import BlockIcon from '@mui/icons-material/Block';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import SettingsIcon from '@mui/icons-material/Settings';
-import { CssSelector, DefaultTarget, Site } from '../App';
-import { SettingsPanel } from './settings-panel';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { CssSelector, Site } from '../App';
+import { IconButton, Menu, MenuItem } from '@mui/material';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -49,15 +49,13 @@ interface BasicTabsProps {
     sites: Site[];
     currentSiteIndex: number;
     activeDomain: string;
-    emoGuardian: string;
-    defaultTarget: DefaultTarget;
+    autoImportEnabled: boolean;
     setKeywords(keywords: string[]): void;
     setSelectors(selectors: CssSelector[]): void;
     setSites(sites: Site[]): void;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
-    setEmoGuardian(emoGuardian: string): void;
-    setDefaultTarget(defaultTarget: DefaultTarget): void;
+    setAutoImportEnabled(autoImportEnabled: boolean): void;
     getElementHideSelector(): string;
     getTextHideSelector(): string;
     currentIsActiveDomain(): boolean;
@@ -73,10 +71,10 @@ export default function BasicTabs(props: BasicTabsProps) {
     return (
         <Box sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={value} onChange={handleChange} variant="fullWidth" aria-label="basic tabs example">
+                <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
                     <Tab icon={<FindInPageIcon />} {...a11yProps(0)} />
                     <Tab icon={<BlockIcon />} {...a11yProps(1)} />
-                    <Tab icon={<SettingsIcon />} {...a11yProps(2)} />
+                    <MoreVertMenu></MoreVertMenu>
                 </Tabs>
             </Box>
             <TabPanel value={value} index={0}>
@@ -86,6 +84,7 @@ export default function BasicTabs(props: BasicTabsProps) {
                     currentSiteIndex={props.currentSiteIndex}
                     keywords={props.keywords}
                     activeDomain={props.activeDomain}
+                    autoImportEnabled={props.autoImportEnabled}
                     setCurrentSite={props.setCurrentSite}
                     setCurrentSiteIndex={props.setCurrentSiteIndex}
                     setSelectors={props.setSelectors}
@@ -98,19 +97,53 @@ export default function BasicTabs(props: BasicTabsProps) {
                 <KeywordPanel
                     keywords={props.keywords}
                     currentSite={props.sites[props.currentSiteIndex]}
+                    autoImportEnabled={props.autoImportEnabled}
                     setKeywords={props.setKeywords}
                     getElementHideSelector={props.getElementHideSelector}
                     getTextHideSelector={props.getTextHideSelector}
                 ></KeywordPanel>
             </TabPanel>
-            <TabPanel value={value} index={2}>
-                <SettingsPanel
-                    emoGuardian={props.emoGuardian}
-                    defaultTarget={props.defaultTarget}
-                    setEmoGuardian={props.setEmoGuardian}
-                    setDefaultTarget={props.setDefaultTarget}
-                ></SettingsPanel>
-            </TabPanel>
+        </Box>
+    );
+}
+
+function MoreVertMenu() {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    return (
+        <Box marginY={'auto'} marginLeft={'auto'} marginRight={'4px'}>
+            <IconButton
+                id="basic-button"
+                aria-controls={open ? 'basic-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                onClick={handleClick}
+            >
+                <MoreVertIcon />
+            </IconButton>
+            <Menu
+                id="basic-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                MenuListProps={{
+                    'aria-labelledby': 'basic-button',
+                    style: {
+                        padding: 0
+                    }
+                }}
+            >
+                <MenuItem onClick={() => chrome.runtime.openOptionsPage()}>
+                    {chrome.i18n.getMessage('options')}
+                </MenuItem>
+            </Menu>
         </Box>
     );
 }
