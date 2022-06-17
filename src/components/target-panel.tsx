@@ -13,6 +13,7 @@ interface TargetPanelProps {
     currentSiteIndex: number;
     keywords: string[];
     activeDomain: string;
+    autoImportEnabled: boolean;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
     setSelectors(selectors: CssSelector[]): void;
@@ -73,14 +74,15 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                             activeDomain={this.props.activeDomain}
                             sites={this.props.sites}
                             currentSiteIndex={this.props.currentSiteIndex}
-                            setCurrentSiteIndex={this.props.setCurrentSiteIndex}>
-                        </TargetAutocomplete>
+                            setCurrentSiteIndex={this.props.setCurrentSiteIndex}></TargetAutocomplete>
                     </Box>
                 </Grid>
                 <SelectorPanel
+                    sites={this.props.sites}
                     selectors={this.props.currentSite.cssSelectors}
                     keywords={this.props.keywords}
                     listHeight={330}
+                    autoImportEnabled={this.props.autoImportEnabled}
                     setSelectors={this.props.setSelectors}
                     getElementHideSelector={this.props.getElementHideSelector}
                     getTextHideSelector={this.props.getTextHideSelector}
@@ -168,7 +170,7 @@ class TargetAutocomplete extends React.Component<TargetAutocompleteProps, Target
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        label={chrome.i18n.getMessage('targetTextFieldLabel')}
+                        label={chrome.i18n.getMessage('target')}
                         variant="standard"
                         sx={this.getInputFontColor(this.state.inputValue)}
                     />

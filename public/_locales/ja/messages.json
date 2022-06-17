@@ -1,9 +1,30 @@
 {
-    "targetTextFieldLabel": {
+    "options": {
+        "message": "オプション"
+    },
+    "reset": {
+        "message": "リセット"
+    },
+    "cancel": {
+        "message": "キャンセル"
+    },
+    "export": {
+        "message": "エクスポート"
+    },
+    "target": {
         "message": "ターゲット"
+    },
+    "interval": {
+        "message": "間隔"
     },
     "selectorTextFieldLabel": {
         "message": "CSSセレクタを追加"
+    },
+    "selectorFormatError": {
+        "message": "CSSセレクタの形式が正しくありません。"
+    },
+    "selectorAlreadyExistsError": {
+        "message": "このCSSセレクタは既に登録されています。"
     },
     "elementHideModeDescription": {
         "message": "キーワードと一致した要素を隠す"
@@ -11,8 +32,14 @@
     "textHideModeDescription": {
         "message": "キーワードと一致したテキストを隠す"
     },
+    "showKeywordList": {
+        "message": "キーワードリストを表示"
+    },
     "keywordTextFieldLabel": {
         "message": "キーワードを追加"
+    },
+    "keywordError": {
+        "message": "登録できないキーワードです。"
     },
     "emoGuardianTextFieldLabel": {
         "message": "絵文字"
@@ -32,7 +59,85 @@
     "allSitesRadioButtonLabel": {
         "message": "全てのサイト"
     },
+    "dropboxIntegration": {
+        "message": "Dropbox連携"
+    },
+    "integrateWithDropboxPrimary": {
+        "message": "Dropboxと連携"
+    },
+    "integrateWithDropboxSecondary": {
+        "message": "Dropbox連携を有効にすると、インポート/エクスポート機能が利用できるようになります。"
+    },
+    "integrateWithDropboxNote": {
+        "message": "これは異なるベンダーのブラウザ間（例: Chrome ⇄ Safari）でデータを共有するための機能です。同じベンダーのブラウザ間（例: Chrome ⇄ Chrome, Safari ⇄ Safari）では自動的にデータが同期されるため、この機能を使用する必要はありません。"
+    },
+    "integrateWithDropboxButton": {
+        "message": "連携"
+    },
+    "revokeDropboxIntegrationButton": {
+        "message": "解除"
+    },
+    "enableAutoImportPrimary": {
+        "message": "自動インポートを有効化"
+    },
+    "enableAutoImportSecondary": {
+        "message": "Dropboxにエクスポートされたデータを継続的にインポートします。"
+    },
+    "exportToDropboxPrimary": {
+        "message": "Dropboxにエクスポート"
+    },
+    "exportToDropboxSecondary": {
+        "message": "現在のデータをDropboxにエクスポートします。他のブラウザで自動インポートを有効にすると、エクスポートしたデータを読み込むことができます。"
+    },
+    "lastExport": {
+        "message": "最後のエクスポート"
+    },
+    "autoImportConfirmDialogTitle": {
+        "message": "自動インポートを有効にしますか？"
+    },
+    "autoImportConfirmDialogText": {
+        "message": "自動インポートを有効にすると、このブラウザで設定されているCSSセレクタとキーワードは全て削除され、代わりにクラウド上にエクスポートされたデータが読み込まれます。また、このブラウザではCSSセレクタやキーワードの追加・削除ができなくなります。"
+    },
+    "autoImportInterval": {
+        "message": "自動インポートの間隔"
+    },
+    "lastImport": {
+        "message": "最後のインポート"
+    },
+    "appSettings": {
+        "message": "アプリ設定"
+    },
+    "resetRecommendSelectorPrimary": {
+        "message": "おすすめCSSセレクタのリセット"
+    },
+    "resetRecommendSelectorSecondary": {
+        "message": "以下のCSSセレクタをインストール時の設定に戻します。"
+    },
+    "resetRecommendSelectorConfirmDialogTitle": {
+        "message": "おすすめCSSセレクタをリセットしますか？"
+    },
+    "resetRecommendSelectorConfirmDialogText": {
+        "message": "おすすめCSSセレクタをインストール時の設定に戻します。この操作は取り消すことができません。"
+    },
     "selectorRegistrationAlert": {
         "message": "CSSセレクタを登録しました！:"
+    },
+    "fiveMinutes": {
+        "message": "5分"
+    },
+    "fifteenMinutes": {
+        "message": "15分"
+    },
+    "thirtyMinutes": {
+        "message": "30分"
+    },
+    "oneHour": {
+        "message": "1時間"
+    },
+    "sixHours": {
+        "message": "6時間"
+    },
+    "1Day": {
+        "message": "1日"
     }
 }

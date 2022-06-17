@@ -1,50 +1,429 @@
 import * as React from 'react';
-import { FormControl, FormControlLabel, FormHelperText, FormLabel, Grid, Radio, RadioGroup, TextField } from '@mui/material';
-import { DefaultTarget } from '../App';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Switch, TextField, Typography } from '@mui/material';
+import { Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
+import { authorize, createFile, fileExists, revokeToken, updateFile } from '../cloud/dropbox';
+import { Dropbox } from 'dropbox';
+import { LoadingButton } from '@mui/lab';
+import DOMPurify from 'dompurify';
 
 interface SettingsPanelProps {
     emoGuardian: string;
-    defaultTarget: DefaultTarget;
+    sites: Site[];
+    dropboxIntegrationEnabled: boolean;
+    autoImportEnabled: boolean;
+    autoImportInterval: number;
+    lastExport: Date | null;
+    lastImport: Date | null;
     setEmoGuardian(emoGuardian: string): void;
-    setDefaultTarget(defaultTarget: DefaultTarget): void;
+    setSites(sites: Site[]): void;
+    setDropboxIntegrationEnabled(dropboxIntegrationEnabled: boolean): void;
+    setAutoImportEnabled(autoImportEnabled: boolean): void;
+    setAutoImportInterval(autoImportInterval: number): void;
+    setLastExport(lastExport: Date): void;
+    getSyncContents(): Promise<Object>;
 }
 
-export class SettingsPanel extends React.Component<SettingsPanelProps> {
+interface SettingsPanelState {
+    subscriptionModeEnabled: boolean;
+}
+
+export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsPanelState> {
+    state: SettingsPanelState = {
+        subscriptionModeEnabled: false
+    };
+
     renderFormHelperText(text: string) {
         return <FormHelperText sx={{ mr: 0, ml: 0 }}>{text}</FormHelperText>;
+    }
+
+    saveEmoGuardian(emoGuardian: string) {
+        const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
+        this.props.setEmoGuardian(cleanedEmoGuardian);
+        chrome.storage.sync.set({ emoGuardian: emoGuardian });
     }
 
     render() {
         return (
             <Grid container rowSpacing={3} textAlign="left">
                 <Grid item xs={12}>
-                    <TextField
-                        variant="filled"
-                        label={chrome.i18n.getMessage("emoGuardianTextFieldLabel")}
-                        value={this.props.emoGuardian}
-                        onChange={event => this.props.setEmoGuardian(event.target.value)}
-                        onBlur={event => chrome.storage.sync.set({ emoGuardian: event.target.value })}
-                    />
-                    {this.renderFormHelperText(chrome.i18n.getMessage('emoGuardianFormHelperText'))}
+                    <Paper elevation={2}>
+                        <Box p={2}>
+                            <TextField
+                                variant="filled"
+                                label={chrome.i18n.getMessage("emoGuardianTextFieldLabel")}
+                                value={this.props.emoGuardian}
+                                onChange={event => this.props.setEmoGuardian(event.target.value)}
+                                onBlur={event => this.saveEmoGuardian(event.target.value)}
+                                disabled={this.props.autoImportEnabled}
+                            />
+                            {this.renderFormHelperText(chrome.i18n.getMessage('emoGuardianFormHelperText'))}
+                        </Box>
+                    </Paper>
                 </Grid>
                 <Grid item xs={12}>
-                    <FormControl>
-                        <FormLabel>{chrome.i18n.getMessage('defaultTargetFormLabel')}</FormLabel>
-                        {this.renderFormHelperText(chrome.i18n.getMessage('defaultTargetFormHelperText'))}
-                        <RadioGroup
-                            aria-labelledby="demo-radio-buttons-group-label"
-                            defaultValue={AppConstants.ThisSite}
-                            name="radio-buttons-group"
-                            value={this.props.defaultTarget}
-                            onChange={event => this.props.setDefaultTarget(event.target.value as DefaultTarget)}
-                        >
-                            <FormControlLabel value={AppConstants.ThisSite} control={<Radio />} label={chrome.i18n.getMessage('thisSiteRadioButtonLabel')} />
-                            <FormControlLabel value={AppConstants.AllSites} control={<Radio />} label={chrome.i18n.getMessage('allSitesRadioButtonLabel')} />
-                        </RadioGroup>
-                    </FormControl>
+                    <Paper elevation={2}>
+                        <RecommendSelector
+                            sites={this.props.sites}
+                            setSites={this.props.setSites}
+                            autoImportEnabled={this.props.autoImportEnabled}
+                        ></RecommendSelector>
+                    </Paper>
+                </Grid>
+                <Grid item xs={12}>
+                    <Paper elevation={2}>
+                        <DropboxIntegration
+                            dropboxIntegrationEnabled={this.props.dropboxIntegrationEnabled}
+                            autoImportEnabled={this.props.autoImportEnabled}
+                            autoImportInterval={this.props.autoImportInterval}
+                            lastExport={this.props.lastExport}
+                            lastImport={this.props.lastImport}
+                            setDropboxIntegrationEnabled={this.props.setDropboxIntegrationEnabled}
+                            setAutoImportEnabled={this.props.setAutoImportEnabled}
+                            setAutoImportInterval={this.props.setAutoImportInterval}
+                            setLastExport={this.props.setLastExport}
+                            getSyncContents={this.props.getSyncContents}
+                        ></DropboxIntegration>
+                    </Paper>
                 </Grid>
             </Grid>
         );
     }
+}
+
+interface DropboxIntegrationProps {
+    dropboxIntegrationEnabled: boolean;
+    autoImportEnabled: boolean;
+    autoImportInterval: number;
+    lastExport: Date | null;
+    lastImport: Date | null;
+    setDropboxIntegrationEnabled(dropboxIntegrationEnabled: boolean): void;
+    setAutoImportEnabled(autoImportEnabled: boolean): void;
+    setAutoImportInterval(autoImportInterval: number): void;
+    setLastExport(lastExport: Date): void;
+    getSyncContents(): Promise<Object>;
+}
+
+function DropboxIntegration(props: DropboxIntegrationProps) {
+    const [dialogOpen, setDialogOpen] = React.useState(false);
+    const [isLoadingExport, setIsLoadingExport] = React.useState(false);
+    const [isLoadingIntegration, setIsLoadingIntegration] = React.useState(false);
+
+    const handleToggle = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+        if (checked) {
+            setDialogOpen(true);
+        } else {
+            props.setAutoImportEnabled(checked);
+        }
+    };
+
+    const integrateWithDropbox = async () => {
+        setIsLoadingIntegration(true);
+
+        try {
+            await authorize();
+            props.setDropboxIntegrationEnabled(true);
+
+            setIsLoadingIntegration(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const revokeDropboxIntegration = async () => {
+        setIsLoadingIntegration(true);
+
+        try {
+            await revokeToken();
+
+            props.setDropboxIntegrationEnabled(false);
+            props.setAutoImportEnabled(false);
+
+            setIsLoadingIntegration(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const exportToDropbox = async () => {
+        setIsLoadingExport(true);
+
+        const dropboxAuth = await authorize();
+        const dropbox = new Dropbox({ auth: dropboxAuth });
+        const fileName = AppConstants.BlockListFileName;
+        const syncContents = await props.getSyncContents();
+
+        if (await fileExists(dropbox, dropboxAuth, fileName)) {
+            await updateFile(dropbox, dropboxAuth, fileName, syncContents);
+        } else {
+            await createFile(dropbox, dropboxAuth, fileName, syncContents);
+        }
+        props.setLastExport(new Date());
+
+        setIsLoadingExport(false);
+    };
+
+    const displayLastExport = () => {
+        return props.lastExport
+            ? `\n${chrome.i18n.getMessage('lastExport')}: ${props.lastExport.toLocaleString()}`
+            : '';
+    };
+
+    const displayLastImport = () => {
+        return props.lastImport
+            ? `${chrome.i18n.getMessage('lastImport')}: ${props.lastImport.toLocaleString()}`
+            : '';
+    };
+
+    return (
+        <List
+            sx={{ bgcolor: 'background.paper' }}
+            subheader={<ListSubheader>{chrome.i18n.getMessage('dropboxIntegration')}</ListSubheader>}
+        >
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('integrateWithDropboxPrimary')}
+                    secondary={`${chrome.i18n.getMessage('integrateWithDropboxSecondary')}\n${chrome.i18n.getMessage('integrateWithDropboxNote')}`}
+                    secondaryTypographyProps={{ style: { whiteSpace: 'pre-wrap' } }}
+                    sx={{ marginRight: 1 }}
+                />
+                <LoadingButton
+                    variant="outlined"
+                    onClick={props.dropboxIntegrationEnabled ? revokeDropboxIntegration : integrateWithDropbox}
+                    loading={isLoadingIntegration}
+                    sx={{ minWidth: 120 }}
+                >
+                    {props.dropboxIntegrationEnabled ? chrome.i18n.getMessage('revokeDropboxIntegrationButton') : chrome.i18n.getMessage('integrateWithDropboxButton')}
+                </LoadingButton>
+            </ListItem>
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('exportToDropboxPrimary')}
+                    secondary={`${chrome.i18n.getMessage('exportToDropboxSecondary')}${displayLastExport()}`}
+                    secondaryTypographyProps={{ style: { whiteSpace: 'pre-wrap' } }}
+                    sx={{ marginRight: 1 }}
+                />
+                <LoadingButton
+                    variant="outlined"
+                    disabled={!props.dropboxIntegrationEnabled || props.autoImportEnabled}
+                    onClick={exportToDropbox}
+                    loading={isLoadingExport}
+                    sx={{ minWidth: 120 }}
+                >
+                    {chrome.i18n.getMessage('export')}
+                </LoadingButton>
+            </ListItem>
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('enableAutoImportPrimary')}
+                    secondary={chrome.i18n.getMessage('enableAutoImportSecondary')}
+                />
+                <Switch
+                    edge="end"
+                    onChange={handleToggle}
+                    checked={props.autoImportEnabled}
+                    disabled={!props.dropboxIntegrationEnabled}
+                />
+                <AlertDialog
+                    open={dialogOpen}
+                    setOpen={setDialogOpen}
+                    enableSubscriptionMode={async () => await props.setAutoImportEnabled(true)}
+                ></AlertDialog>
+            </ListItem>
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('autoImportInterval')}
+                    secondary={displayLastImport()}
+                    secondaryTypographyProps={{ style: { whiteSpace: 'pre-wrap' } }}
+                    sx={{ marginRight: 1 }}
+                />
+                <AutoImportIntervalSelect
+                    dropboxIntegrationEnabled={props.dropboxIntegrationEnabled}
+                    autoImportEnabled={props.autoImportEnabled}
+                    autoImportInterval={props.autoImportInterval}
+                    setAutoImportInterval={props.setAutoImportInterval}
+                ></AutoImportIntervalSelect>
+            </ListItem>
+        </List>
+    );
+}
+
+interface AutoImportIntervalSelectProps {
+    dropboxIntegrationEnabled: boolean;
+    autoImportEnabled: boolean;
+    autoImportInterval: number;
+    setAutoImportInterval(autoImportInterval: number): void;
+}
+
+export default function AutoImportIntervalSelect(props: AutoImportIntervalSelectProps) {
+    const handleChange = (event: SelectChangeEvent) => {
+        const interval = parseInt(event.target.value);
+        props.setAutoImportInterval(interval);
+        chrome.runtime.sendMessage({ callee: 'updateAutoImportInterval', args: [interval] });
+    };
+
+    return (
+        <Box sx={{ minWidth: 120 }}>
+            <FormControl fullWidth size="small">
+                <InputLabel id="demo-simple-select-label">{chrome.i18n.getMessage('interval')}</InputLabel>
+                <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    value={props.autoImportInterval.toString()}
+                    label={chrome.i18n.getMessage('interval')}
+                    onChange={handleChange}
+                    disabled={!props.dropboxIntegrationEnabled || !props.autoImportEnabled}
+                >
+                    {AppConstants.AutoImportIntervals.map(interval => (
+                        <MenuItem value={interval.value}>
+                            {interval.displayName}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+        </Box>
+    );
+}
+
+interface AlertDialogProps {
+    open: boolean;
+    setOpen(open: boolean): void;
+    enableSubscriptionMode(): void;
+}
+
+function AlertDialog(props: AlertDialogProps) {
+    const handleClose = () => {
+        props.setOpen(false);
+    };
+
+    const agree = async () => {
+        await props.enableSubscriptionMode();
+        chrome.runtime.sendMessage({ callee: 'importBlockList' });
+        handleClose();
+    };
+
+    return (
+        <Dialog
+            open={props.open}
+            onClose={handleClose}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+        >
+            <DialogTitle id="alert-dialog-title">
+                {chrome.i18n.getMessage('autoImportConfirmDialogTitle')}
+            </DialogTitle>
+            <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    {chrome.i18n.getMessage('autoImportConfirmDialogText')}
+                    <Typography variant='caption' component={'div'} paddingTop={2}>
+                        {chrome.i18n.getMessage('integrateWithDropboxNote')}
+                    </Typography>
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleClose}>{chrome.i18n.getMessage('cancel')}</Button>
+                <Button onClick={agree} autoFocus>OK</Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+
+interface RecommendSelectorProps {
+    sites: Site[];
+    autoImportEnabled: boolean;
+    setSites(sites: Site[]): void;
+}
+
+function RecommendSelector(props: RecommendSelectorProps) {
+    const [dialogOpen, setDialogOpen] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    const resetRecommendSelectors = () => {
+        setIsLoading(true);
+
+        const newSites = props.sites.slice();
+        const allSite = newSites.find(site => site.domain === AppConstants.AllSites);
+        if (!allSite) {
+            throw Error();
+        }
+
+        const recommendSelectors = AppConstants.RecommendCssSelectors.map(recommendSelector => recommendSelector.value);
+        const userDefinedSelectors = allSite.cssSelectors.filter(selector => !recommendSelectors.includes(selector.value));
+        const newSelectors = AppConstants.RecommendCssSelectors.concat(userDefinedSelectors);
+        allSite.cssSelectors = newSelectors;
+
+        props.setSites(newSites);
+
+        setIsLoading(false);
+    };
+
+    return (
+        <List
+            sx={{ bgcolor: 'background.paper' }}
+            subheader={<ListSubheader>{chrome.i18n.getMessage('appSettings')}</ListSubheader>}
+        >
+            <ListItem>
+                <ListItemText
+                    id="switch-list-label-bluetooth"
+                    primary={chrome.i18n.getMessage('resetRecommendSelectorPrimary')}
+                    secondary={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
+                    sx={{ marginRight: 1 }}
+                />
+                <LoadingButton
+                    variant="outlined"
+                    onClick={() => setDialogOpen(true)}
+                    loading={isLoading}
+                    sx={{ minWidth: 120 }}
+                    disabled={props.autoImportEnabled}
+                >
+                    {chrome.i18n.getMessage('reset')}
+                </LoadingButton>
+                <SelectorResetAlertDialog
+                    open={dialogOpen}
+                    setOpen={setDialogOpen}
+                    resetRecommendSelectors={() => resetRecommendSelectors()}
+                ></SelectorResetAlertDialog>
+            </ListItem>
+        </List>
+    );
+}
+
+interface SelectorResetAlertDialogProps {
+    open: boolean;
+    setOpen(open: boolean): void;
+    resetRecommendSelectors(): void;
+}
+
+function SelectorResetAlertDialog(props: SelectorResetAlertDialogProps) {
+    const handleClose = () => {
+        props.setOpen(false);
+    };
+
+    const agree = () => {
+        props.resetRecommendSelectors();
+        handleClose();
+    };
+
+    return (
+        <Dialog
+            open={props.open}
+            onClose={handleClose}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+        >
+            <DialogTitle id="alert-dialog-title">
+                {chrome.i18n.getMessage('resetRecommendSelectorConfirmDialogTitle')}
+            </DialogTitle>
+            <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    {chrome.i18n.getMessage('resetRecommendSelectorConfirmDialogText')}
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleClose}>{chrome.i18n.getMessage('cancel')}</Button>
+                <Button onClick={agree} autoFocus>OK</Button>
+            </DialogActions>
+        </Dialog>
+    );
 }

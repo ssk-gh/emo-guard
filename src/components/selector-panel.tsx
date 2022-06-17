@@ -1,19 +1,22 @@
 import * as React from 'react';
-import { ListItem, ListItemText, ListItemSecondaryAction, IconButton, TextField, List, Grid, InputAdornment, MenuItem, SelectChangeEvent, Menu } from '@mui/material';
+import { ListItem, ListItemText, ListItemSecondaryAction, IconButton, TextField, List, Grid, InputAdornment, MenuItem, Menu } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
-import HideSourceIcon from '@mui/icons-material/HideSource';
+import CodeOffIcon from '@mui/icons-material/CodeOff';
 import FontDownloadOffIcon from '@mui/icons-material/FontDownloadOff';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
-import { CssSelector } from '../App';
+import { CssSelector, Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
+import DOMPurify from 'dompurify';
 
 interface SelectorPanelProps {
+    sites: Site[];
     selectors: CssSelector[];
     keywords: string[];
     listHeight: number;
+    autoImportEnabled: boolean;
     setSelectors(selectors: CssSelector[]): void;
     getElementHideSelector(): string;
     getTextHideSelector(): string;
@@ -23,6 +26,8 @@ interface SelectorPanelProps {
 interface SelectorPanelState {
     selector: string;
     hideMode: string;
+    isError: boolean;
+    errorMessage: string;
     interactiveModeEnabled: boolean;
 }
 
@@ -30,6 +35,8 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
     state: SelectorPanelState = {
         selector: '',
         hideMode: '',
+        isError: false,
+        errorMessage: '',
         interactiveModeEnabled: false
     };
 
@@ -46,31 +53,61 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
         });
     }
 
+    isValidSelector(selector: string) {
+        try {
+            document.createDocumentFragment().querySelector(selector);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
     async addSelector(event: React.KeyboardEvent<HTMLDivElement>) {
-        if (this.state.selector && event.key === 'Enter') {
-            const newSelectors = this.props.selectors.concat([
-                { value: this.state.selector, hideMode: AppConstants.ElementHideMode, visibility: false }
-            ]);
+        if (!this.state.selector || event.key !== 'Enter') {
+            return;
+        }
 
-            this.props.setSelectors(newSelectors);
+        const cleanedSelector = DOMPurify.sanitize(this.state.selector);
+        if (!cleanedSelector) {
+            this.setState({ isError: true, errorMessage: chrome.i18n.getMessage('selectorFormatError') });
+            return;
+        }
+        if (!this.isValidSelector(cleanedSelector)) {
+            this.setState({ isError: true, errorMessage: chrome.i18n.getMessage('selectorFormatError') });
+            return;
+        }
 
-            if (this.props.currentIsActiveDomain()) {
-                const activeTab = await getActiveTabAsync();
-                if (activeTab.id) {
-                    if (!this.props.keywords.length) {
-                        return;
-                    }
-                    const elementHideSelector = this.props.getElementHideSelector();
-                    await sendMessageToTabAsync(activeTab.id, { callee: 'updateElementHideSelector', args: [elementHideSelector] });
-                    sendMessageToTabAsync(activeTab.id, { callee: 'hideElements', args: [this.state.selector, this.props.keywords] });
-                    if (this.state.interactiveModeEnabled) {
-                        this.toggleInteractiveMode();
-                    }
+        const allSiteSelectors = this.props.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors.map(selector => selector.value) ?? [];
+        const referenceSelectors = Array.from(new Set(this.props.selectors.map(selector => selector.value).concat(allSiteSelectors)));
+        if (referenceSelectors.includes(cleanedSelector)) {
+            this.setState({ isError: true, errorMessage: chrome.i18n.getMessage('selectorAlreadyExistsError') });
+            return;
+        }
+
+        this.setState({ isError: false, errorMessage: '' });
+
+        const newSelectors = this.props.selectors.concat([
+            { value: cleanedSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
+        ]);
+
+        this.props.setSelectors(newSelectors);
+
+        if (this.props.currentIsActiveDomain()) {
+            const activeTab = await getActiveTabAsync();
+            if (activeTab.id) {
+                if (!this.props.keywords.length) {
+                    return;
+                }
+                const elementHideSelector = this.props.getElementHideSelector();
+                await sendMessageToTabAsync(activeTab.id, { callee: 'updateElementHideSelector', args: [elementHideSelector] });
+                sendMessageToTabAsync(activeTab.id, { callee: 'hideElements', args: [cleanedSelector, this.props.keywords] });
+                if (this.state.interactiveModeEnabled) {
+                    this.toggleInteractiveMode();
                 }
             }
-
-            this.setState({ selector: '' });
         }
+
+        this.setState({ selector: '' });
     }
 
     changeSelector(event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) {
@@ -162,6 +199,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         selectors={this.props.selectors}
                         selectorIndex={index}
                         keywords={this.props.keywords}
+                        autoImportEnabled={this.props.autoImportEnabled}
                         setSelectors={this.props.setSelectors}
                         getElementHideSelector={this.props.getElementHideSelector}
                         getTextHideSelector={this.props.getTextHideSelector}
@@ -169,13 +207,17 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                     <IconButton
                         onClick={() => this.toggleVisibility(index)}
                         edge="end"
-                        aria-label="Visibility">
+                        aria-label="Visibility"
+                        disabled={this.props.autoImportEnabled}
+                    >
                         {this.getVisibilityIcon(cssSelector)}
                     </IconButton>
                     <IconButton
                         onClick={() => this.deleteSelector(index)}
                         edge="end"
-                        aria-label="delete">
+                        aria-label="delete"
+                        disabled={this.props.autoImportEnabled}
+                    >
                         <DeleteIcon />
                     </IconButton>
                 </ListItemSecondaryAction>
@@ -199,12 +241,17 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         value={this.state.selector}
                         onChange={event => this.changeSelector(event)}
                         onKeyPress={event => this.addSelector(event)}
+                        error={this.state.isError}
+                        helperText={this.state.isError ? this.state.errorMessage : null}
+                        disabled={this.props.autoImportEnabled}
                         InputProps={{
                             endAdornment: (
                                 <InputAdornment position="end">
                                     <IconButton
                                         color={this.state.interactiveModeEnabled ? 'primary' : 'default'}
-                                        onClick={() => this.toggleInteractiveMode()}>
+                                        onClick={() => this.toggleInteractiveMode()}
+                                        disabled={this.props.autoImportEnabled}
+                                    >
                                         <HighlightAltIcon />
                                     </IconButton>
                                 </InputAdornment>
@@ -221,6 +268,7 @@ interface HideModeProps {
     selectors: CssSelector[];
     selectorIndex: number;
     keywords: string[];
+    autoImportEnabled: boolean;
     setSelectors(selectors: CssSelector[]): void;
     getElementHideSelector(): string;
     getTextHideSelector(): string;
@@ -228,7 +276,7 @@ interface HideModeProps {
 
 const options = [
     {
-        icon: <HideSourceIcon sx={{ fontSize: '1.4rem' }} />,
+        icon: <CodeOffIcon sx={{ fontSize: '1.4rem' }} />,
         text: chrome.i18n.getMessage('elementHideModeDescription')
     },
     {
@@ -285,6 +333,7 @@ export default function HideModeMenu(props: HideModeProps) {
                 aria-haspopup="true"
                 onClick={handleClickListItem}
                 sx={{ marginRight: '-9px' }}
+                disabled={props.autoImportEnabled}
             >
                 {options[selector.hideMode ?? 0].icon}
             </IconButton>
