@@ -10,6 +10,7 @@ export interface AppState {
   currentSiteIndex: number;
   activeDomain: string;
   autoImportEnabled: boolean;
+  alwaysShowKeywords: boolean;
 }
 
 export interface Site {
@@ -39,16 +40,21 @@ class App extends React.Component<{}, AppState> {
       ],
       currentSiteIndex: 0,
       activeDomain: '',
-      autoImportEnabled: false
+      autoImportEnabled: false,
+      alwaysShowKeywords: false
     };
   }
 
   async componentDidMount() {
     const syncData = await getStorageAsync(['keywords', 'sites']);
-    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled']);
+    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled', 'alwaysShowKeywords']);
 
     const autoImportEnabled = (localData.autoImportEnabled ?? this.state.autoImportEnabled) as boolean;
-    this.setState({ autoImportEnabled: autoImportEnabled });
+    const alwaysShowKeywords = (localData.alwaysShowKeywords ?? this.state.alwaysShowKeywords) as boolean;
+    this.setState({
+      autoImportEnabled: autoImportEnabled,
+      alwaysShowKeywords: alwaysShowKeywords
+    });
 
     if (autoImportEnabled) {
       const keywords = (localData.keywords ?? this.state.keywords) as string[];
@@ -167,6 +173,7 @@ class App extends React.Component<{}, AppState> {
           currentSiteIndex={this.state.currentSiteIndex}
           activeDomain={this.state.activeDomain}
           autoImportEnabled={this.state.autoImportEnabled}
+          alwaysShowKeywords={this.state.alwaysShowKeywords}
           setKeywords={this.setKeywords}
           setSelectors={this.setSelectors}
           setSites={this.setSites}

@@ -119,6 +119,9 @@
     "appSettings": {
         "message": "アプリ設定"
     },
+    "alwaysShowKeywordList": {
+        "message": "キーワードリストを常に表示"
+    },
     "resetRecommendSelectorPrimary": {
         "message": "おすすめCSSセレクタのリセット"
     },

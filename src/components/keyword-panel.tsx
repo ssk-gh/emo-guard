@@ -10,6 +10,7 @@ interface KeywordProps {
     keywords: string[];
     currentSite: Site;
     autoImportEnabled: boolean;
+    alwaysShowKeywords: boolean;
     setKeywords(keywords: string[]): Promise<void>;
 }
 
@@ -120,7 +121,9 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
             </List>
         );
 
-        return this.state.visible ? keywordList : visibilityIcon;
+        return this.props.alwaysShowKeywords || this.state.visible
+            ? keywordList
+            : visibilityIcon;
     }
 
     render() {

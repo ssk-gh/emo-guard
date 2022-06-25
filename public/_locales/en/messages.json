@@ -119,6 +119,9 @@
     "appSettings": {
         "message": "App Settings"
     },
+    "alwaysShowKeywordList": {
+        "message": "Always show keyword list"
+    },
     "resetRecommendSelectorPrimary": {
         "message": "Reset recommended CSS selectors"
     },

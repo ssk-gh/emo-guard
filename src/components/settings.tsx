@@ -17,6 +17,7 @@ export interface SettingsState {
     lastExport: Date | null;
     lastImport: Date | null;
     blockingSpeed: number;
+    alwaysShowKeywords: boolean;
 }
 
 class Settings extends React.Component<{}, SettingsState> {
@@ -37,13 +38,14 @@ class Settings extends React.Component<{}, SettingsState> {
             autoImportInterval: 30,
             lastExport: null,
             lastImport: null,
-            blockingSpeed: 50
+            blockingSpeed: 50,
+            alwaysShowKeywords: false
         };
     }
 
     async componentDidMount() {
         const syncData = await getStorageAsync(['keywords', 'sites', 'emoGuardian']);
-        const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'dropboxIntegrationEnabled', 'autoImportEnabled', 'autoImportInterval', 'lastExport', 'lastImport', 'blockingSpeed']);
+        const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'dropboxIntegrationEnabled', 'autoImportEnabled', 'autoImportInterval', 'lastExport', 'lastImport', 'blockingSpeed', 'alwaysShowKeywords']);
 
         const dropboxIntegrationEnabled = (localData.dropboxIntegrationEnabled ?? this.state.dropboxIntegrationEnabled) as boolean;
         const autoImportEnabled = (localData.autoImportEnabled ?? this.state.autoImportEnabled) as boolean;
@@ -51,13 +53,15 @@ class Settings extends React.Component<{}, SettingsState> {
         const lastExport = localData.lastExport ? new Date(localData.lastExport) : this.state.lastExport;
         const lastImport = localData.lastImport ? new Date(localData.lastImport) : this.state.lastImport;
         const blockingSpeed = (localData.blockingSpeed ?? this.state.blockingSpeed) as number;
+        const alwaysShowKeywords = (localData.alwaysShowKeywords ?? this.state.alwaysShowKeywords) as boolean;
         this.setState({
             dropboxIntegrationEnabled: dropboxIntegrationEnabled,
             autoImportEnabled: autoImportEnabled,
             autoImportInterval: autoImportInterval,
             lastExport: lastExport,
             lastImport: lastImport,
-            blockingSpeed: blockingSpeed
+            blockingSpeed: blockingSpeed,
+            alwaysShowKeywords: alwaysShowKeywords
         });
 
         if (autoImportEnabled) {
@@ -164,6 +168,11 @@ class Settings extends React.Component<{}, SettingsState> {
         await chrome.storage.local.set({ blockingSpeed: blockingSpeed });
     }
 
+    setAlwaysShowKeywords = async (alwaysShowKeywords: boolean) => {
+        this.setState({ alwaysShowKeywords: alwaysShowKeywords });
+        await chrome.storage.local.set({ alwaysShowKeywords: alwaysShowKeywords });
+    }
+
     render() {
         return (
             <div className="App">
@@ -185,6 +194,8 @@ class Settings extends React.Component<{}, SettingsState> {
                         lastImport={this.state.lastImport}
                         blockingSpeed={this.state.blockingSpeed}
                         setBlockingSpeed={this.setBlockingSpeed}
+                        alwaysShowKeywords={this.state.alwaysShowKeywords}
+                        setAlwaysShowKeywords={this.setAlwaysShowKeywords}
                     ></SettingsPanel>
                 </Container>
             </div>

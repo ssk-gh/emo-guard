@@ -16,6 +16,7 @@ interface SettingsPanelProps {
     lastExport: Date | null;
     lastImport: Date | null;
     blockingSpeed: number;
+    alwaysShowKeywords: boolean;
     setEmoGuardian(emoGuardian: string): void;
     setSites(sites: Site[]): void;
     setDropboxIntegrationEnabled(dropboxIntegrationEnabled: boolean): void;
@@ -24,6 +25,7 @@ interface SettingsPanelProps {
     setLastExport(lastExport: Date): void;
     setBlockingSpeed(blockingSpeed: number): void;
     getSyncContents(): Promise<Object>;
+    setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
 }
 
 interface SettingsPanelState {
@@ -71,6 +73,8 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                             autoImportEnabled={this.props.autoImportEnabled}
                             blockingSpeed={this.props.blockingSpeed}
                             setBlockingSpeed={this.props.setBlockingSpeed}
+                            alwaysShowKeywords={this.props.alwaysShowKeywords}
+                            setAlwaysShowKeywords={this.props.setAlwaysShowKeywords}
                         ></RecommendSelector>
                     </Paper>
                 </Grid>
@@ -337,8 +341,10 @@ interface RecommendSelectorProps {
     sites: Site[];
     autoImportEnabled: boolean;
     blockingSpeed: number;
+    alwaysShowKeywords: boolean;
     setSites(sites: Site[]): void;
     setBlockingSpeed(blockingSpeed: number): void;
+    setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
 }
 
 function RecommendSelector(props: RecommendSelectorProps) {
@@ -369,6 +375,16 @@ function RecommendSelector(props: RecommendSelectorProps) {
             sx={{ bgcolor: 'background.paper' }}
             subheader={<ListSubheader>{chrome.i18n.getMessage('appSettings')}</ListSubheader>}
         >
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('alwaysShowKeywordList')}
+                />
+                <Switch
+                    edge="end"
+                    onChange={(event, checked) => props.setAlwaysShowKeywords(checked)}
+                    checked={props.alwaysShowKeywords}
+                />
+            </ListItem>
             <ListItem>
                 <ListItemText
                     id="switch-list-label-bluetooth"
