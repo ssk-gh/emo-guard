@@ -9,7 +9,6 @@ import DOMPurify from 'dompurify';
 
 interface SettingsPanelProps {
     emoGuardian: string;
-    sites: Site[];
     dropboxIntegrationEnabled: boolean;
     autoImportEnabled: boolean;
     autoImportInterval: number;
@@ -24,8 +23,9 @@ interface SettingsPanelProps {
     setAutoImportInterval(autoImportInterval: number): void;
     setLastExport(lastExport: Date): void;
     setBlockingSpeed(blockingSpeed: number): void;
-    getSyncContents(): Promise<Object>;
     setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
+    getSites(): Promise<Site[]>;
+    getSyncContents(): Promise<Object>;
 }
 
 interface SettingsPanelState {
@@ -68,7 +68,7 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                 <Grid item xs={12}>
                     <Paper elevation={2}>
                         <RecommendSelector
-                            sites={this.props.sites}
+                            getSites={this.props.getSites}
                             setSites={this.props.setSites}
                             autoImportEnabled={this.props.autoImportEnabled}
                             blockingSpeed={this.props.blockingSpeed}
@@ -338,10 +338,10 @@ function AlertDialog(props: AlertDialogProps) {
 
 
 interface RecommendSelectorProps {
-    sites: Site[];
     autoImportEnabled: boolean;
     blockingSpeed: number;
     alwaysShowKeywords: boolean;
+    getSites(): Promise<Site[]>;
     setSites(sites: Site[]): void;
     setBlockingSpeed(blockingSpeed: number): void;
     setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
@@ -351,10 +351,10 @@ function RecommendSelector(props: RecommendSelectorProps) {
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
 
-    const resetRecommendSelectors = () => {
+    const resetRecommendSelectors = async () => {
         setIsLoading(true);
 
-        const newSites = props.sites.slice();
+        const newSites = (await props.getSites()).slice();
         const allSite = newSites.find(site => site.domain === AppConstants.AllSites);
         if (!allSite) {
             throw Error();

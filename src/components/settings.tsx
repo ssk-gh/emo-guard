@@ -181,8 +181,8 @@ class Settings extends React.Component<{}, SettingsState> {
                         emoGuardian={this.state.emoGuardian}
                         setEmoGuardian={this.setEmoGuardian}
                         getSyncContents={this.getSyncContents}
+                        getSites={this.getSites}
                         setSites={this.setSites}
-                        sites={this.state.sites}
                         dropboxIntegrationEnabled={this.state.dropboxIntegrationEnabled}
                         setDropboxIntegrationEnabled={this.setDropboxIntegrationEnabled}
                         autoImportEnabled={this.state.autoImportEnabled}
