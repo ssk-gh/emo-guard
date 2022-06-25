@@ -45,7 +45,7 @@ class App extends React.Component<{}, AppState> {
 
   async componentDidMount() {
     const syncData = await getStorageAsync(['keywords', 'sites']);
-    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled', 'interactiveSelector']);
+    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled']);
 
     const autoImportEnabled = (localData.autoImportEnabled ?? this.state.autoImportEnabled) as boolean;
     this.setState({ autoImportEnabled: autoImportEnabled });
@@ -88,16 +88,6 @@ class App extends React.Component<{}, AppState> {
         sites: newSites,
         currentSiteIndex: newSites.length - 1
       });
-    }
-
-    if (localData.interactiveSelector) {
-      const newSites = this.state.sites.slice();
-      newSites[this.state.currentSiteIndex].cssSelectors = newSites[this.state.currentSiteIndex].cssSelectors.concat([
-        { value: localData.interactiveSelector, hideMode: AppConstants.ElementHideMode, searchMode: AppConstants.shallowSearch, visibility: false }
-      ]);
-
-      this.setSites(newSites);
-      chrome.storage.local.set({ interactiveSelector: '' });
     }
   }
 

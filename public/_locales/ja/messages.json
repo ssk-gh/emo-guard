@@ -132,7 +132,7 @@
         "message": "おすすめCSSセレクタをインストール時の設定に戻します。この操作は取り消すことができません。"
     },
     "selectorRegistrationAlert": {
-        "message": "CSSセレクタを登録しました！:"
+        "message": "CSSセレクタを登録しました！"
     },
     "fiveMinutes": {
         "message": "5分"

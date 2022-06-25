@@ -29,6 +29,9 @@
       "js": [
         "/static/js/content-script.js"
       ],
+      "css": [
+        "/static/css/content-script.css"
+      ],
       "run_at": "document_start"
     }
   ]

@@ -2,6 +2,7 @@ import DOMPurify from "dompurify";
 import { CssSelector, Site } from "./App";
 import { AppConstants } from "./constants/app-constants";
 import { getStorageAsync } from "./utils/chrome-async";
+import './content-script.css';
 
 const getSelector = async (hideMode: number, searchMode: number, cssSelectorsAllSite: CssSelector[], cssSelectorsThisSite: CssSelector[], duplicateSelectors: string[]): Promise<string> => {
     const selectorsAllSites = cssSelectorsAllSite
@@ -342,9 +343,7 @@ class ContentScript {
         }
 
         const element = event.target;
-        element.style.backgroundColor = '#42a5f5';
-        element.style.opacity = '0.7';
-        element.style.border = 'solid #1976d2'
+        element.classList.add('wkb-highlight');
 
         const selector = this.buildSelectorFrom(element);
         chrome.runtime.sendMessage({ callee: 'setSelector', args: [selector] })
@@ -356,21 +355,39 @@ class ContentScript {
         }
 
         const element = event.target;
-        this.restoreStyle(element);
+        element.classList.remove('wkb-highlight');
     }
 
-    private handleClick = (event: MouseEvent) => {
+    private handleClick = async (event: MouseEvent) => {
         if (!(event.target instanceof HTMLElement)) {
             return;
         }
+        event.stopPropagation();
+        event.preventDefault();
 
         const element = event.target;
-        this.restoreStyle(element);
+        element.classList.remove('wkb-highlight');
 
         const selector = this.buildSelectorFrom(element);
-        chrome.storage.local.set({ interactiveSelector: selector });
+
+        const syncData = await chrome.storage.sync.get('sites');
+        const sites = (syncData.sites ?? []) as Site[];
+        const host = window.self === window.parent
+            ? window.location.hostname
+            : new URL(document.referrer).hostname;
+        const thisSite = sites.find(site => site.domain === host) ?? {
+            domain: host,
+            enabled: true,
+            cssSelectors: []
+        };
+        thisSite.cssSelectors = thisSite.cssSelectors.concat([
+            { value: selector, hideMode: AppConstants.ElementHideMode, searchMode: AppConstants.shallowSearch, visibility: false }
+        ]);
+
+        chrome.storage.sync.set({ sites: sites });
 
         this.hideElements(selector, this.state.keywords, this.searchElementsShallow, this.detoxifyElement);
+
         const message = `${chrome.i18n.getMessage("selectorRegistrationAlert")}
 ------------------------------------------------------------
 
@@ -393,12 +410,6 @@ by ${AppConstants.AppName}`;
             : '';
 
         return `${element.tagName.toLowerCase()}${id}${joinedClass}`;
-    }
-
-    private restoreStyle = (element: HTMLElement) => {
-        element.style.backgroundColor = '';
-        element.style.opacity = '1';
-        element.style.border = ''
     }
 }
 

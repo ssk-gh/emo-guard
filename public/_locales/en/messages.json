@@ -132,7 +132,7 @@
         "message": "Resets the recommended CSS selector to the settings at the time of installation. This operation cannot be undone."
     },
     "selectorRegistrationAlert": {
-        "message": "CSS selector is now registered!:"
+        "message": "CSS selector is now registered!"
     },
     "fiveMinutes": {
         "message": "5 minutes"
