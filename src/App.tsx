@@ -21,6 +21,7 @@ export interface Site {
 export interface CssSelector {
   value: string;
   hideMode: number;
+  searchMode: number;
   visibility: boolean;
 }
 
@@ -92,7 +93,7 @@ class App extends React.Component<{}, AppState> {
     if (localData.interactiveSelector) {
       const newSites = this.state.sites.slice();
       newSites[this.state.currentSiteIndex].cssSelectors = newSites[this.state.currentSiteIndex].cssSelectors.concat([
-        { value: localData.interactiveSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
+        { value: localData.interactiveSelector, hideMode: AppConstants.ElementHideMode, searchMode: AppConstants.shallowSearch, visibility: false }
       ]);
 
       this.setSites(newSites);
@@ -102,41 +103,43 @@ class App extends React.Component<{}, AppState> {
 
   removeEmptySites = (sites: Site[]) => sites.filter(site => site.cssSelectors.length || !site.enabled || site.domain === AppConstants.AllSites);
 
-  getElementHideSelector = (): string => {
-    const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
-      .map(selector => selector.value)
-      ?? [];
-    const selectorsForThisSite = this.state.sites[this.state.currentSiteIndex].cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
+  getSelector = async (hideMode: number, searchMode: number, cssSelectorsAllSite: CssSelector[], cssSelectorsThisSite: CssSelector[], duplicateSelectors: string[]): Promise<string> => {
+    const selectorsAllSites = cssSelectorsAllSite
+      .filter(selector => !selector.visibility && selector.hideMode === hideMode && selector.searchMode === searchMode && !duplicateSelectors.includes(selector.value))
+      .map(selector => selector.value);
+    const selectorsThisSite = cssSelectorsThisSite
+      .filter(selector => !selector.visibility && selector.hideMode === hideMode && selector.searchMode === searchMode)
       .map(selector => selector.value);
 
-    return selectorsForAllSites.concat(selectorsForThisSite).join(',');
+    return selectorsAllSites.concat(selectorsThisSite).join(',');
   }
 
-  getTextHideSelector = (): string => {
-    const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
-      .map(selector => selector.value)
-      ?? [];
-    const selectorsForThisSite = this.state.sites[this.state.currentSiteIndex].cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
-      .map(selector => selector.value);
+  getRefreshSelector = async (): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }> => {
+    const cssSelectorsAllSite = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors ?? [];
+    const cssSelectorsThisSite = this.state.sites.find(site => site.domain === this.state.activeDomain)?.cssSelectors ?? [];
+    const selectorsValueAllSite = cssSelectorsAllSite.filter(selector => !selector.visibility).map(selector => selector.value);
+    const selectorsValueThisSite = cssSelectorsThisSite.filter(selector => !selector.visibility).map(selector => selector.value);
+    const duplicateSelectors = selectorsValueAllSite.filter(selector => selectorsValueThisSite.includes(selector));
 
-    return selectorsForAllSites.concat(selectorsForThisSite).join(',');
+    return {
+      elementShallowHideSelector: await this.getSelector(AppConstants.ElementHideMode, AppConstants.shallowSearch, cssSelectorsAllSite, cssSelectorsThisSite, duplicateSelectors),
+      elementDeepHideSelector: await this.getSelector(AppConstants.ElementHideMode, AppConstants.deepSearch, cssSelectorsAllSite, cssSelectorsThisSite, duplicateSelectors),
+      textHideSelector: await this.getSelector(AppConstants.TextHideMode, AppConstants.shallowSearch, cssSelectorsAllSite, cssSelectorsThisSite, duplicateSelectors)
+    };
   }
 
-  setKeywords = (keywords: string[]) => {
+
+  setKeywords = async (keywords: string[]) => {
     this.setState({ keywords: keywords });
-    chrome.storage.sync.set({ keywords: keywords });
+    await chrome.storage.sync.set({ keywords: keywords });
   }
 
-  setSelectors = (selectors: CssSelector[]) => {
+  setSelectors = async (selectors: CssSelector[]) => {
     const newSites = this.state.sites.slice();
     newSites[this.state.currentSiteIndex].cssSelectors = selectors;
 
     this.setState({ sites: newSites });
-    chrome.storage.sync.set({ sites: newSites });
+    await chrome.storage.sync.set({ sites: newSites });
   }
 
   setSites = (sites: Site[]) => {
@@ -179,8 +182,7 @@ class App extends React.Component<{}, AppState> {
           setSites={this.setSites}
           setCurrentSite={this.setCurrentSite}
           setCurrentSiteIndex={this.setCurrentSiteIndex}
-          getElementHideSelector={this.getElementHideSelector}
-          getTextHideSelector={this.getTextHideSelector}
+          getRefreshSelector={this.getRefreshSelector}
           currentIsActiveDomain={this.currentIsActiveDomain}
           setAutoImportEnabled={this.setAutoImportEnabled}
         ></BasicTabs>

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Switch, TextField, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Slider, Switch, TextField, Typography } from '@mui/material';
 import { Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
 import { authorize, createFile, fileExists, revokeToken, updateFile } from '../cloud/dropbox';
@@ -15,12 +15,14 @@ interface SettingsPanelProps {
     autoImportInterval: number;
     lastExport: Date | null;
     lastImport: Date | null;
+    blockingSpeed: number;
     setEmoGuardian(emoGuardian: string): void;
     setSites(sites: Site[]): void;
     setDropboxIntegrationEnabled(dropboxIntegrationEnabled: boolean): void;
     setAutoImportEnabled(autoImportEnabled: boolean): void;
     setAutoImportInterval(autoImportInterval: number): void;
     setLastExport(lastExport: Date): void;
+    setBlockingSpeed(blockingSpeed: number): void;
     getSyncContents(): Promise<Object>;
 }
 
@@ -67,6 +69,8 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                             sites={this.props.sites}
                             setSites={this.props.setSites}
                             autoImportEnabled={this.props.autoImportEnabled}
+                            blockingSpeed={this.props.blockingSpeed}
+                            setBlockingSpeed={this.props.setBlockingSpeed}
                         ></RecommendSelector>
                     </Paper>
                 </Grid>
@@ -332,7 +336,9 @@ function AlertDialog(props: AlertDialogProps) {
 interface RecommendSelectorProps {
     sites: Site[];
     autoImportEnabled: boolean;
+    blockingSpeed: number;
     setSites(sites: Site[]): void;
+    setBlockingSpeed(blockingSpeed: number): void;
 }
 
 function RecommendSelector(props: RecommendSelectorProps) {
@@ -385,6 +391,17 @@ function RecommendSelector(props: RecommendSelectorProps) {
                     resetRecommendSelectors={() => resetRecommendSelectors()}
                 ></SelectorResetAlertDialog>
             </ListItem>
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('blockingSpeed')}
+                    secondary={`${chrome.i18n.getMessage('blockingSpeedSecondary')}${chrome.i18n.getMessage('blockingSpeedHint')}`}
+                    sx={{ marginRight: 1 }}
+                />
+                <BlockingSpeedSelect
+                    blockingSpeed={props.blockingSpeed}
+                    setBlockingSpeed={props.setBlockingSpeed}
+                ></BlockingSpeedSelect>
+            </ListItem>
         </List>
     );
 }
@@ -425,5 +442,40 @@ function SelectorResetAlertDialog(props: SelectorResetAlertDialogProps) {
                 <Button onClick={agree} autoFocus>OK</Button>
             </DialogActions>
         </Dialog>
+    );
+}
+
+interface BlockingSpeedSelectProps {
+    blockingSpeed: number;
+    setBlockingSpeed(blockingSpeed: number): void;
+}
+
+function BlockingSpeedSelect(props: BlockingSpeedSelectProps) {
+    const handleChange = (event: Event, newValue: number | number[]) => {
+        const blockingSpeed = newValue as number;
+        props.setBlockingSpeed(blockingSpeed);
+    };
+
+    const marks = [
+        {
+            value: 0,
+            label: chrome.i18n.getMessage('fast'),
+        },
+        {
+            value: 100,
+            label: chrome.i18n.getMessage('slow'),
+        },
+    ];
+
+    return (
+        <Box sx={{ minWidth: 120 }}>
+            <Slider
+                value={props.blockingSpeed}
+                onChange={handleChange}
+                defaultValue={50}
+                aria-label="Default"
+                valueLabelDisplay="auto"
+                marks={marks} />
+        </Box>
     );
 }

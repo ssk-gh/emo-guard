@@ -50,14 +50,13 @@ interface BasicTabsProps {
     currentSiteIndex: number;
     activeDomain: string;
     autoImportEnabled: boolean;
-    setKeywords(keywords: string[]): void;
-    setSelectors(selectors: CssSelector[]): void;
+    setKeywords(keywords: string[]): Promise<void>;
+    setSelectors(selectors: CssSelector[]): Promise<void>;
     setSites(sites: Site[]): void;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
     setAutoImportEnabled(autoImportEnabled: boolean): void;
-    getElementHideSelector(): string;
-    getTextHideSelector(): string;
+    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
     currentIsActiveDomain(): boolean;
 }
 
@@ -88,8 +87,7 @@ export default function BasicTabs(props: BasicTabsProps) {
                     setCurrentSite={props.setCurrentSite}
                     setCurrentSiteIndex={props.setCurrentSiteIndex}
                     setSelectors={props.setSelectors}
-                    getElementHideSelector={props.getElementHideSelector}
-                    getTextHideSelector={props.getTextHideSelector}
+                    getRefreshSelector={props.getRefreshSelector}
                     currentIsActiveDomain={props.currentIsActiveDomain}
                 ></TargetPanel>
             </TabPanel>
@@ -99,8 +97,6 @@ export default function BasicTabs(props: BasicTabsProps) {
                     currentSite={props.sites[props.currentSiteIndex]}
                     autoImportEnabled={props.autoImportEnabled}
                     setKeywords={props.setKeywords}
-                    getElementHideSelector={props.getElementHideSelector}
-                    getTextHideSelector={props.getTextHideSelector}
                 ></KeywordPanel>
             </TabPanel>
         </Box>

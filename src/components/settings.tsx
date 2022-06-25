@@ -16,6 +16,7 @@ export interface SettingsState {
     autoImportInterval: number;
     lastExport: Date | null;
     lastImport: Date | null;
+    blockingSpeed: number;
 }
 
 class Settings extends React.Component<{}, SettingsState> {
@@ -35,25 +36,28 @@ class Settings extends React.Component<{}, SettingsState> {
             autoImportEnabled: false,
             autoImportInterval: 30,
             lastExport: null,
-            lastImport: null
+            lastImport: null,
+            blockingSpeed: 50
         };
     }
 
     async componentDidMount() {
         const syncData = await getStorageAsync(['keywords', 'sites', 'emoGuardian']);
-        const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'dropboxIntegrationEnabled', 'autoImportEnabled', 'autoImportInterval', 'lastExport', 'lastImport']);
+        const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'dropboxIntegrationEnabled', 'autoImportEnabled', 'autoImportInterval', 'lastExport', 'lastImport', 'blockingSpeed']);
 
         const dropboxIntegrationEnabled = (localData.dropboxIntegrationEnabled ?? this.state.dropboxIntegrationEnabled) as boolean;
         const autoImportEnabled = (localData.autoImportEnabled ?? this.state.autoImportEnabled) as boolean;
         const autoImportInterval = (localData.autoImportInterval ?? this.state.autoImportInterval) as number;
         const lastExport = localData.lastExport ? new Date(localData.lastExport) : this.state.lastExport;
         const lastImport = localData.lastImport ? new Date(localData.lastImport) : this.state.lastImport;
+        const blockingSpeed = (localData.blockingSpeed ?? this.state.blockingSpeed) as number;
         this.setState({
             dropboxIntegrationEnabled: dropboxIntegrationEnabled,
             autoImportEnabled: autoImportEnabled,
             autoImportInterval: autoImportInterval,
             lastExport: lastExport,
             lastImport: lastImport,
+            blockingSpeed: blockingSpeed
         });
 
         if (autoImportEnabled) {
@@ -155,6 +159,11 @@ class Settings extends React.Component<{}, SettingsState> {
         await chrome.storage.local.set({ lastImport: lastImport.toJSON() });
     }
 
+    setBlockingSpeed = async (blockingSpeed: number) => {
+        this.setState({ blockingSpeed: blockingSpeed });
+        await chrome.storage.local.set({ blockingSpeed: blockingSpeed });
+    }
+
     render() {
         return (
             <div className="App">
@@ -174,6 +183,8 @@ class Settings extends React.Component<{}, SettingsState> {
                         lastExport={this.state.lastExport}
                         setLastExport={this.setLastExport}
                         lastImport={this.state.lastImport}
+                        blockingSpeed={this.state.blockingSpeed}
+                        setBlockingSpeed={this.setBlockingSpeed}
                     ></SettingsPanel>
                 </Container>
             </div>

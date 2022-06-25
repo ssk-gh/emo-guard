@@ -17,6 +17,12 @@
     "interval": {
         "message": "間隔"
     },
+    "fast": {
+        "message": "速い"
+    },
+    "slow": {
+        "message": "遅い"
+    },
     "selectorTextFieldLabel": {
         "message": "CSSセレクタを追加"
     },
@@ -31,6 +37,12 @@
     },
     "textHideModeDescription": {
         "message": "キーワードと一致したテキストを隠す"
+    },
+    "shallowSearchModeDescription": {
+        "message": "シャローサーチ（一致した要素のテキストから検索）"
+    },
+    "deepSearchModeDescription": {
+        "message": "ディープサーチ（一致した要素とその子孫要素のテキストから検索）"
     },
     "showKeywordList": {
         "message": "キーワードリストを表示"
@@ -139,5 +151,14 @@
     },
     "1Day": {
         "message": "1日"
+    },
+    "blockingSpeed": {
+        "message": "キーワードブロック速度"
+    },
+    "blockingSpeedSecondary": {
+        "message": "要素やテキストを非表示にする速度を調整します。"
+    },
+    "blockingSpeedHint": {
+        "message": "数字が小さいほど素早く非表示にできますが、負荷が上がります。数字が大きいほど非表示までに時間がかかりますが、低負荷です。動作が重いと感じるときには数字を大きくしてみてください。"
     }
 }

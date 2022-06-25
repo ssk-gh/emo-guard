@@ -17,6 +17,12 @@
     "interval": {
         "message": "Interval"
     },
+    "fast": {
+        "message": "Fast"
+    },
+    "slow": {
+        "message": "Slow"
+    },
     "selectorTextFieldLabel": {
         "message": "Enter any css selectors"
     },
@@ -31,6 +37,12 @@
     },
     "textHideModeDescription": {
         "message": "Hides text matching keywords"
+    },
+    "shallowSearchModeDescription": {
+        "message": "Shallow search (Search from text of matched elements)"
+    },
+    "deepSearchModeDescription": {
+        "message": "Deep Search (Search from text of matched elements and its descendants)"
     },
     "showKeywordList": {
         "message": "Show keyword list"
@@ -139,5 +151,14 @@
     },
     "1Day": {
         "message": "1 day"
+    },
+    "blockingSpeed": {
+        "message": "Keyword blocking speed"
+    },
+    "blockingSpeedSecondary": {
+        "message": "Adjusts the speed at which elements and text are hidden."
+    },
+    "blockingSpeedHint": {
+        "message": "The lower the number, the quicker it can be hidden, but the higher the load. The larger the number, the longer it takes to hide, but the lower the load. If you feel that the page is slow, try increasing the number."
     }
 }
