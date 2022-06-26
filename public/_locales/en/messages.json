@@ -32,6 +32,9 @@
     "slow": {
         "message": "Slow"
     },
+    "repository": {
+        "message": "Repository"
+    },
     "selectorTextFieldLabel": {
         "message": "Enter any css selectors"
     },
@@ -126,7 +129,7 @@
         "message": "Exports app data to dropbox."
     },
     "exportToDropboxHelp": {
-        "message": "You can import the exported data by enabling auto import in other browsers."
+        "message": "The app data to be exported are CSS selectors, keywords, and EmoGuardian. Also, export must be done manually. You can import the exported data by enabling auto import in other browsers."
     },
     "lastExport": {
         "message": "Last export"
@@ -196,5 +199,8 @@
     },
     "disablePowerTooltip": {
         "message": "Click to disable on this site."
+    },
+    "aboutEmoGuard": {
+        "message": "About EmoGuard"
     }
 }

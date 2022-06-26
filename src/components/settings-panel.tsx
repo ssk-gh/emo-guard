@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, IconButton, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, IconButton, InputLabel, Link, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
 import { authorize, createFile, fileExists, revokeToken, updateFile } from '../cloud/dropbox';
@@ -42,33 +42,14 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
         return <FormHelperText sx={{ mr: 0, ml: 0 }}>{text}</FormHelperText>;
     }
 
-    saveEmoGuardian(emoGuardian: string) {
-        const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
-        this.props.setEmoGuardian(cleanedEmoGuardian);
-        chrome.storage.sync.set({ emoGuardian: emoGuardian });
-    }
-
     render() {
         return (
-            <Grid container rowSpacing={3} textAlign="left">
-                <Grid item xs={12}>
-                    <Paper elevation={2}>
-                        <Box p={2}>
-                            <TextField
-                                variant="filled"
-                                label={chrome.i18n.getMessage("emoGuardianTextFieldLabel")}
-                                value={this.props.emoGuardian}
-                                onChange={event => this.props.setEmoGuardian(event.target.value)}
-                                onBlur={event => this.saveEmoGuardian(event.target.value)}
-                                disabled={this.props.autoImportEnabled}
-                            />
-                            {this.renderFormHelperText(chrome.i18n.getMessage('emoGuardianFormHelperText'))}
-                        </Box>
-                    </Paper>
-                </Grid>
+            <Grid container rowSpacing={3} mt={3} textAlign="left">
                 <Grid item xs={12}>
                     <Paper elevation={2}>
                         <RecommendSelector
+                            emoGuardian={this.props.emoGuardian}
+                            setEmoGuardian={this.props.setEmoGuardian}
                             getSites={this.props.getSites}
                             setSites={this.props.setSites}
                             autoImportEnabled={this.props.autoImportEnabled}
@@ -93,6 +74,16 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                             setLastExport={this.props.setLastExport}
                             getSyncContents={this.props.getSyncContents}
                         ></DropboxIntegration>
+                    </Paper>
+                </Grid>
+                <Grid item xs={12}>
+                    <Paper elevation={2}>
+                        <Box p={2}>
+                            <Typography>{chrome.i18n.getMessage('aboutEmoGuard')}</Typography>
+                            <Link href={AppConstants.RepositoryUrl} target="_blank" rel="noopener noreferrer" underline="none">
+                                {chrome.i18n.getMessage('repository')}
+                            </Link>
+                        </Box>
                     </Paper>
                 </Grid>
             </Grid>
@@ -349,11 +340,13 @@ function AlertDialog(props: AlertDialogProps) {
 
 
 interface RecommendSelectorProps {
+    emoGuardian: string;
     autoImportEnabled: boolean;
     blockingSpeed: number;
     alwaysShowKeywords: boolean;
     getSites(): Promise<Site[]>;
     setSites(sites: Site[]): void;
+    setEmoGuardian(emoGuardian: string): void;
     setBlockingSpeed(blockingSpeed: number): void;
     setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
 }
@@ -381,11 +374,32 @@ function RecommendSelector(props: RecommendSelectorProps) {
         setIsLoading(false);
     };
 
+    const saveEmoGuardian = (emoGuardian: string) => {
+        const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
+        props.setEmoGuardian(cleanedEmoGuardian);
+        chrome.storage.sync.set({ emoGuardian: emoGuardian });
+    }
+
     return (
         <List
             sx={{ bgcolor: 'background.paper' }}
             subheader={<ListSubheader>{chrome.i18n.getMessage('appSettings')}</ListSubheader>}
         >
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('emoGuardianTextFieldLabel')}
+                    secondary={chrome.i18n.getMessage('emoGuardianFormHelperText')}
+                />
+                <TextField
+                    variant="filled"
+                    label={chrome.i18n.getMessage("emoGuardianTextFieldLabel")}
+                    value={props.emoGuardian}
+                    onChange={event => props.setEmoGuardian(event.target.value)}
+                    onBlur={event => saveEmoGuardian(event.target.value)}
+                    disabled={props.autoImportEnabled}
+                    sx={{ width: 120 }}
+                />
+            </ListItem>
             <ListItem>
                 <ListItemText
                     primary={chrome.i18n.getMessage('alwaysShowKeywordList')}
@@ -395,33 +409,6 @@ function RecommendSelector(props: RecommendSelectorProps) {
                     onChange={(event, checked) => props.setAlwaysShowKeywords(checked)}
                     checked={props.alwaysShowKeywords}
                 />
-            </ListItem>
-            <ListItem>
-                <ListItemText
-                    id="switch-list-label-bluetooth"
-                    primary={(
-                        <TextWithTooltip
-                            text={chrome.i18n.getMessage('resetRecommendSelectorPrimary')}
-                            tooltipTitle={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
-                        ></TextWithTooltip>
-                    )}
-                    // secondary={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
-                    sx={{ marginRight: 1 }}
-                />
-                <LoadingButton
-                    variant="outlined"
-                    onClick={() => setDialogOpen(true)}
-                    loading={isLoading}
-                    sx={{ minWidth: 120 }}
-                    disabled={props.autoImportEnabled}
-                >
-                    {chrome.i18n.getMessage('reset')}
-                </LoadingButton>
-                <SelectorResetAlertDialog
-                    open={dialogOpen}
-                    setOpen={setDialogOpen}
-                    resetRecommendSelectors={() => resetRecommendSelectors()}
-                ></SelectorResetAlertDialog>
             </ListItem>
             <ListItem>
                 <ListItemText
@@ -438,6 +425,32 @@ function RecommendSelector(props: RecommendSelectorProps) {
                     blockingSpeed={props.blockingSpeed}
                     setBlockingSpeed={props.setBlockingSpeed}
                 ></BlockingSpeedSelect>
+            </ListItem>
+            <ListItem>
+                <ListItemText
+                    id="switch-list-label-bluetooth"
+                    primary={(
+                        <TextWithTooltip
+                            text={chrome.i18n.getMessage('resetRecommendSelectorPrimary')}
+                            tooltipTitle={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
+                        ></TextWithTooltip>
+                    )}
+                    sx={{ marginRight: 1 }}
+                />
+                <LoadingButton
+                    variant="outlined"
+                    onClick={() => setDialogOpen(true)}
+                    loading={isLoading}
+                    sx={{ minWidth: 120 }}
+                    disabled={props.autoImportEnabled}
+                >
+                    {chrome.i18n.getMessage('reset')}
+                </LoadingButton>
+                <SelectorResetAlertDialog
+                    open={dialogOpen}
+                    setOpen={setDialogOpen}
+                    resetRecommendSelectors={() => resetRecommendSelectors()}
+                ></SelectorResetAlertDialog>
             </ListItem>
         </List>
     );

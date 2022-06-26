@@ -116,7 +116,7 @@ function MoreVertMenu() {
     };
 
     return (
-        <Box marginY={'auto'} marginLeft={'auto'} marginRight={'4px'}>
+        <Box marginY={'auto'} marginLeft={'auto'} marginRight={'6px'}>
             <IconButton
                 id="basic-button"
                 aria-controls={open ? 'basic-menu' : undefined}

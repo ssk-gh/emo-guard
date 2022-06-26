@@ -10,6 +10,7 @@ export class AppConstants {
     static readonly deepSearch = 1;
     static readonly AuthRedirectUrl = 'https://ssk-gh.github.io/web-keyword-blocker/';
     static readonly BlockListFileName = 'blocklist.json';
+    static readonly RepositoryUrl = 'https://github.com/ssk-gh/web-keyword-blocker';
     static readonly AutoImportIntervals = [
         {
             value: 5,

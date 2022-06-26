@@ -167,12 +167,13 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
 
     generateSelectorListItems() {
         return this.props.selectors.map((cssSelector, index) => (
-            <ListItem sx={{ paddingRight: 10, justifyContent: 'center' }}>
+            <ListItem sx={{ paddingRight: 18, justifyContent: 'center' }}>
                 <ListItemText
                     primary={cssSelector.value}
                     primaryTypographyProps={{
                         style: {
-                            overflowWrap: 'break-word'
+                            overflowX: 'auto',
+                            whiteSpace: 'pre'
                         }
                     }}
                 />
@@ -198,6 +199,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                             onClick={() => this.toggleVisibility(index)}
                             edge="end"
                             aria-label="Visibility"
+                            sx={{ marginRight: '-9px' }}
                             disabled={this.props.autoImportEnabled}
                         >
                             {this.getVisibilityIcon(cssSelector)}
@@ -220,7 +222,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
 
     render() {
         return (
-            <Grid container>
+            <Grid container rowSpacing={1}>
                 <Grid item xs={12}>
                     <List sx={{ height: this.props.listHeight, maxHeight: this.props.listHeight, overflow: 'auto' }}>
                         {this.generateSelectorListItems()}

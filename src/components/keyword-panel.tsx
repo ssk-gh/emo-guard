@@ -75,7 +75,8 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
                     primary={keyword}
                     primaryTypographyProps={{
                         style: {
-                            overflowWrap: 'break-word'
+                            overflowX: 'auto',
+                            whiteSpace: 'pre'
                         }
                     }}
                 />
@@ -130,7 +131,7 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
 
     render() {
         return (
-            <Grid container>
+            <Grid container rowSpacing={1}>
                 <Grid item xs={12}>
                     {this.renderKeywordList()}
                 </Grid>
