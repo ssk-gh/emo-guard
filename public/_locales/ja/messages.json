@@ -32,6 +32,9 @@
     "slow": {
         "message": "遅い"
     },
+    "repository": {
+        "message": "リポジトリ"
+    },
     "selectorTextFieldLabel": {
         "message": "CSSセレクターを追加"
     },
@@ -81,7 +84,7 @@
         "message": "絵文字"
     },
     "emoGuardianFormHelperText": {
-        "message": "入力された絵文字で要素や文字列を隠します。"
+        "message": "要素や文字列を隠す絵文字を指定します。"
     },
     "defaultTargetFormLabel": {
         "message": "デフォルトターゲット"
@@ -96,13 +99,13 @@
         "message": "全てのサイト"
     },
     "dropboxIntegration": {
-        "message": "Dropbox連携"
+        "message": "Dropbox 連携"
     },
     "integrateWithDropboxPrimary": {
-        "message": "Dropboxと連携"
+        "message": "Dropbox と連携"
     },
     "integrateWithDropboxSecondary": {
-        "message": "Dropbox連携を有効にすると、インポート/エクスポート機能が利用できるようになります。"
+        "message": "Dropbox 連携を有効にすると、インポート/エクスポート機能が利用できるようになります。"
     },
     "integrateWithDropboxNote": {
         "message": "これは異なるベンダーのブラウザ間（例: Chrome ⇄ Safari）でデータを共有するための機能です。同じベンダーのブラウザ間（例: Chrome ⇄ Chrome, Safari ⇄ Safari）では自動的にデータが同期されるため、この機能を使用する必要はありません。"
@@ -117,16 +120,16 @@
         "message": "自動インポートを有効化"
     },
     "enableAutoImportSecondary": {
-        "message": "Dropboxにエクスポートされたデータを継続的にインポートします。"
+        "message": "Dropbox にエクスポートされたデータを自動でインポートします。"
     },
     "exportToDropboxPrimary": {
-        "message": "Dropboxにエクスポート"
+        "message": "Dropbox にエクスポート"
     },
     "exportToDropboxSecondary": {
-        "message": "現在のデータをDropboxにエクスポートします。"
+        "message": "現在のデータを Dropbox にエクスポートします。"
     },
     "exportToDropboxHelp": {
-        "message": "他のブラウザで自動インポートを有効にすると、エクスポートしたデータを読み込むことができます。"
+        "message": "エクスポート対象のデータはCSSセレクター・キーワード・絵文字です。また、エクスポートは手動で行う必要があります。他のブラウザで自動インポートを有効にすると、Dropboxからデータを読み込むことができます。"
     },
     "lastExport": {
         "message": "最後のエクスポート"
@@ -196,5 +199,8 @@
     },
     "disablePowerTooltip": {
         "message": "クリックするとこのサイトで無効にします。"
+    },
+    "aboutEmoGuard": {
+        "message": "EmoGuard について"
     }
 }
