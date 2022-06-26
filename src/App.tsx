@@ -10,6 +10,7 @@ export interface AppState {
   currentSiteIndex: number;
   activeDomain: string;
   autoImportEnabled: boolean;
+  alwaysShowKeywords: boolean;
 }
 
 export interface Site {
@@ -21,6 +22,7 @@ export interface Site {
 export interface CssSelector {
   value: string;
   hideMode: number;
+  searchMode: number;
   visibility: boolean;
 }
 
@@ -38,16 +40,21 @@ class App extends React.Component<{}, AppState> {
       ],
       currentSiteIndex: 0,
       activeDomain: '',
-      autoImportEnabled: false
+      autoImportEnabled: false,
+      alwaysShowKeywords: false
     };
   }
 
   async componentDidMount() {
     const syncData = await getStorageAsync(['keywords', 'sites']);
-    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled', 'interactiveSelector']);
+    const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled', 'alwaysShowKeywords']);
 
     const autoImportEnabled = (localData.autoImportEnabled ?? this.state.autoImportEnabled) as boolean;
-    this.setState({ autoImportEnabled: autoImportEnabled });
+    const alwaysShowKeywords = (localData.alwaysShowKeywords ?? this.state.alwaysShowKeywords) as boolean;
+    this.setState({
+      autoImportEnabled: autoImportEnabled,
+      alwaysShowKeywords: alwaysShowKeywords
+    });
 
     if (autoImportEnabled) {
       const keywords = (localData.keywords ?? this.state.keywords) as string[];
@@ -88,55 +95,47 @@ class App extends React.Component<{}, AppState> {
         currentSiteIndex: newSites.length - 1
       });
     }
-
-    if (localData.interactiveSelector) {
-      const newSites = this.state.sites.slice();
-      newSites[this.state.currentSiteIndex].cssSelectors = newSites[this.state.currentSiteIndex].cssSelectors.concat([
-        { value: localData.interactiveSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
-      ]);
-
-      this.setSites(newSites);
-      chrome.storage.local.set({ interactiveSelector: '' });
-    }
   }
 
   removeEmptySites = (sites: Site[]) => sites.filter(site => site.cssSelectors.length || !site.enabled || site.domain === AppConstants.AllSites);
 
-  getElementHideSelector = (): string => {
-    const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
-      .map(selector => selector.value)
-      ?? [];
-    const selectorsForThisSite = this.state.sites[this.state.currentSiteIndex].cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.ElementHideMode)
+  getSelector = async (hideMode: number, searchMode: number, cssSelectorsAllSite: CssSelector[], cssSelectorsThisSite: CssSelector[], duplicateSelectors: string[]): Promise<string> => {
+    const selectorsAllSites = cssSelectorsAllSite
+      .filter(selector => !selector.visibility && selector.hideMode === hideMode && selector.searchMode === searchMode && !duplicateSelectors.includes(selector.value))
+      .map(selector => selector.value);
+    const selectorsThisSite = cssSelectorsThisSite
+      .filter(selector => !selector.visibility && selector.hideMode === hideMode && selector.searchMode === searchMode)
       .map(selector => selector.value);
 
-    return selectorsForAllSites.concat(selectorsForThisSite).join(',');
+    return selectorsAllSites.concat(selectorsThisSite).join(',');
   }
 
-  getTextHideSelector = (): string => {
-    const selectorsForAllSites = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
-      .map(selector => selector.value)
-      ?? [];
-    const selectorsForThisSite = this.state.sites[this.state.currentSiteIndex].cssSelectors
-      .filter(selector => !selector.visibility && selector.hideMode === AppConstants.TextHideMode)
-      .map(selector => selector.value);
+  getRefreshSelector = async (): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }> => {
+    const cssSelectorsAllSite = this.state.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors ?? [];
+    const cssSelectorsThisSite = this.state.sites.find(site => site.domain === this.state.activeDomain)?.cssSelectors ?? [];
+    const selectorsValueAllSite = cssSelectorsAllSite.filter(selector => !selector.visibility).map(selector => selector.value);
+    const selectorsValueThisSite = cssSelectorsThisSite.filter(selector => !selector.visibility).map(selector => selector.value);
+    const duplicateSelectors = selectorsValueAllSite.filter(selector => selectorsValueThisSite.includes(selector));
 
-    return selectorsForAllSites.concat(selectorsForThisSite).join(',');
+    return {
+      elementShallowHideSelector: await this.getSelector(AppConstants.ElementHideMode, AppConstants.shallowSearch, cssSelectorsAllSite, cssSelectorsThisSite, duplicateSelectors),
+      elementDeepHideSelector: await this.getSelector(AppConstants.ElementHideMode, AppConstants.deepSearch, cssSelectorsAllSite, cssSelectorsThisSite, duplicateSelectors),
+      textHideSelector: await this.getSelector(AppConstants.TextHideMode, AppConstants.shallowSearch, cssSelectorsAllSite, cssSelectorsThisSite, duplicateSelectors)
+    };
   }
 
-  setKeywords = (keywords: string[]) => {
+
+  setKeywords = async (keywords: string[]) => {
     this.setState({ keywords: keywords });
-    chrome.storage.sync.set({ keywords: keywords });
+    await chrome.storage.sync.set({ keywords: keywords });
   }
 
-  setSelectors = (selectors: CssSelector[]) => {
+  setSelectors = async (selectors: CssSelector[]) => {
     const newSites = this.state.sites.slice();
     newSites[this.state.currentSiteIndex].cssSelectors = selectors;
 
     this.setState({ sites: newSites });
-    chrome.storage.sync.set({ sites: newSites });
+    await chrome.storage.sync.set({ sites: newSites });
   }
 
   setSites = (sites: Site[]) => {
@@ -174,13 +173,13 @@ class App extends React.Component<{}, AppState> {
           currentSiteIndex={this.state.currentSiteIndex}
           activeDomain={this.state.activeDomain}
           autoImportEnabled={this.state.autoImportEnabled}
+          alwaysShowKeywords={this.state.alwaysShowKeywords}
           setKeywords={this.setKeywords}
           setSelectors={this.setSelectors}
           setSites={this.setSites}
           setCurrentSite={this.setCurrentSite}
           setCurrentSiteIndex={this.setCurrentSiteIndex}
-          getElementHideSelector={this.getElementHideSelector}
-          getTextHideSelector={this.getTextHideSelector}
+          getRefreshSelector={this.getRefreshSelector}
           currentIsActiveDomain={this.currentIsActiveDomain}
           setAutoImportEnabled={this.setAutoImportEnabled}
         ></BasicTabs>

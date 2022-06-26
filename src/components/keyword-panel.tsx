@@ -10,9 +10,8 @@ interface KeywordProps {
     keywords: string[];
     currentSite: Site;
     autoImportEnabled: boolean;
-    setKeywords(keywords: string[]): void;
-    getElementHideSelector(): string;
-    getTextHideSelector(): string;
+    alwaysShowKeywords: boolean;
+    setKeywords(keywords: string[]): Promise<void>;
 }
 
 interface KeywordState {
@@ -46,29 +45,27 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
         }
 
         const keywords = this.props.keywords.concat([cleanedKeyword]);
+        await this.props.setKeywords(keywords);
         const activeTab = await getActiveTabAsync();
         if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'updateKeywords', args: [keywords] });
-
-            sendMessageToTabAsync(activeTab.id, { callee: 'hideElements', args: [this.props.getElementHideSelector(), [cleanedKeyword]] });
-            sendMessageToTabAsync(activeTab.id, { callee: 'hideText', args: [this.props.getTextHideSelector(), [cleanedKeyword]] });
+            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [{ keywords: keywords }] });
+            sendMessageToTabAsync(activeTab.id, { callee: 'hideWithKeyword', args: [[cleanedKeyword]] });
         }
 
         this.setState({ keyword: '' });
-        this.props.setKeywords(keywords);
     }
 
     async deleteKeyword(index: number) {
         const keywords = this.props.keywords.slice();
         keywords.splice(index, 1);
 
+        await this.props.setKeywords(keywords);
+
         const activeTab = await getActiveTabAsync();
         if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'updateKeywords', args: [keywords] });
-            sendMessageToTabAsync(activeTab.id, { callee: 'handleDeleteKeyword', args: [keywords] });
+            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [{ keywords: keywords }] });
+            sendMessageToTabAsync(activeTab.id, { callee: 'refreshKeyword', args: [keywords] });
         }
-
-        this.props.setKeywords(keywords);
     }
 
     generateKeywordListItems() {
@@ -84,7 +81,7 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
                 />
                 <ListItemSecondaryAction>
                     <IconButton
-                        onClick={() => this.deleteKeyword(index)}
+                        onClick={async () => await this.deleteKeyword(index)}
                         edge="end"
                         aria-label="delete"
                         disabled={this.props.autoImportEnabled}>
@@ -124,7 +121,9 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
             </List>
         );
 
-        return this.state.visible ? keywordList : visibilityIcon;
+        return this.props.alwaysShowKeywords || this.state.visible
+            ? keywordList
+            : visibilityIcon;
     }
 
     render() {

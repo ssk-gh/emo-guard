@@ -6,20 +6,20 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import CodeOffIcon from '@mui/icons-material/CodeOff';
 import FontDownloadOffIcon from '@mui/icons-material/FontDownloadOff';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
-import { CssSelector, Site } from '../App';
+import { CssSelector } from '../App';
 import { AppConstants } from '../constants/app-constants';
 import DOMPurify from 'dompurify';
 
 interface SelectorPanelProps {
-    sites: Site[];
     selectors: CssSelector[];
     keywords: string[];
     listHeight: number;
     autoImportEnabled: boolean;
-    setSelectors(selectors: CssSelector[]): void;
-    getElementHideSelector(): string;
-    getTextHideSelector(): string;
+    setSelectors(selectors: CssSelector[]): Promise<void>;
+    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
     currentIsActiveDomain(): boolean;
 }
 
@@ -77,8 +77,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
             return;
         }
 
-        const allSiteSelectors = this.props.sites.find(site => site.domain === AppConstants.AllSites)?.cssSelectors.map(selector => selector.value) ?? [];
-        const referenceSelectors = Array.from(new Set(this.props.selectors.map(selector => selector.value).concat(allSiteSelectors)));
+        const referenceSelectors = this.props.selectors.map(selector => selector.value);
         if (referenceSelectors.includes(cleanedSelector)) {
             this.setState({ isError: true, errorMessage: chrome.i18n.getMessage('selectorAlreadyExistsError') });
             return;
@@ -87,10 +86,10 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
         this.setState({ isError: false, errorMessage: '' });
 
         const newSelectors = this.props.selectors.concat([
-            { value: cleanedSelector, hideMode: AppConstants.ElementHideMode, visibility: false }
+            { value: cleanedSelector, hideMode: AppConstants.ElementHideMode, searchMode: AppConstants.shallowSearch, visibility: false }
         ]);
 
-        this.props.setSelectors(newSelectors);
+        await this.props.setSelectors(newSelectors);
 
         if (this.props.currentIsActiveDomain()) {
             const activeTab = await getActiveTabAsync();
@@ -98,9 +97,9 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                 if (!this.props.keywords.length) {
                     return;
                 }
-                const elementHideSelector = this.props.getElementHideSelector();
-                await sendMessageToTabAsync(activeTab.id, { callee: 'updateElementHideSelector', args: [elementHideSelector] });
-                sendMessageToTabAsync(activeTab.id, { callee: 'hideElements', args: [cleanedSelector, this.props.keywords] });
+                const refreshSelector = await this.props.getRefreshSelector();
+                await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
+                sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
                 if (this.state.interactiveModeEnabled) {
                     this.toggleInteractiveMode();
                 }
@@ -116,20 +115,16 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
 
     async deleteSelector(index: number) {
         const newSelectors = this.props.selectors.slice();
-        const deletedSelector = newSelectors[index];
         newSelectors.splice(index, 1);
 
-        this.props.setSelectors(newSelectors);
+        await this.props.setSelectors(newSelectors);
 
         if (this.props.currentIsActiveDomain()) {
             const activeTab = await getActiveTabAsync();
             if (activeTab.id) {
-                const selectorUpdateMessage = deletedSelector.hideMode === AppConstants.ElementHideMode
-                    ? { callee: 'updateElementHideSelector', args: [this.props.getElementHideSelector()] }
-                    : { callee: 'updateTextHideSelector', args: [this.props.getTextHideSelector()] };
-                await sendMessageToTabAsync(activeTab.id, selectorUpdateMessage);
-
-                sendMessageToTabAsync(activeTab.id, { callee: 'handleDeleteSelector', args: [deletedSelector.value] });
+                const refreshSelector = await this.props.getRefreshSelector();
+                await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
+                sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
             }
         }
     }
@@ -139,28 +134,14 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
         const newSelectors = this.props.selectors.slice();
         newSelectors[index].visibility = newVisibility;
 
-        this.props.setSelectors(newSelectors);
+        await this.props.setSelectors(newSelectors);
 
         if (this.props.currentIsActiveDomain()) {
             const activeTab = await getActiveTabAsync();
             if (activeTab.id) {
-                const selectorUpdateMessage = newSelectors[index].hideMode === AppConstants.ElementHideMode
-                    ? { callee: 'updateElementHideSelector', args: [this.props.getElementHideSelector()] }
-                    : { callee: 'updateTextHideSelector', args: [this.props.getTextHideSelector()] };
-                await sendMessageToTabAsync(activeTab.id, selectorUpdateMessage);
-
-                if (newVisibility) {
-                    sendMessageToTabAsync(activeTab.id, { callee: 'handleDeleteSelector', args: [newSelectors[index].value] });
-                } else {
-                    if (!this.props.keywords.length) {
-                        return;
-                    }
-
-                    const hide = newSelectors[index].hideMode === AppConstants.ElementHideMode
-                        ? 'hideElements'
-                        : 'hideText';
-                    sendMessageToTabAsync(activeTab.id, { callee: hide, args: [newSelectors[index].value, this.props.keywords] });
-                }
+                const refreshSelector = await this.props.getRefreshSelector();
+                await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
+                sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
             }
         }
     }
@@ -201,9 +182,16 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         keywords={this.props.keywords}
                         autoImportEnabled={this.props.autoImportEnabled}
                         setSelectors={this.props.setSelectors}
-                        getElementHideSelector={this.props.getElementHideSelector}
-                        getTextHideSelector={this.props.getTextHideSelector}
+                        getRefreshSelector={this.props.getRefreshSelector}
                     ></HideModeMenu>
+                    <SearchModeMenu
+                        selectors={this.props.selectors}
+                        selectorIndex={index}
+                        keywords={this.props.keywords}
+                        autoImportEnabled={this.props.autoImportEnabled}
+                        setSelectors={this.props.setSelectors}
+                        getRefreshSelector={this.props.getRefreshSelector}
+                    ></SearchModeMenu>
                     <IconButton
                         onClick={() => this.toggleVisibility(index)}
                         edge="end"
@@ -269,9 +257,8 @@ interface HideModeProps {
     selectorIndex: number;
     keywords: string[];
     autoImportEnabled: boolean;
-    setSelectors(selectors: CssSelector[]): void;
-    getElementHideSelector(): string;
-    getTextHideSelector(): string;
+    setSelectors(selectors: CssSelector[]): Promise<void>;
+    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
 }
 
 const options = [
@@ -301,18 +288,17 @@ export default function HideModeMenu(props: HideModeProps) {
         const newSelectors = props.selectors.slice();
         const newSelector = newSelectors[props.selectorIndex];
         newSelector.hideMode = index;
-        props.setSelectors(newSelectors);
+        if (index === AppConstants.TextHideMode) {
+            newSelector.searchMode = AppConstants.shallowSearch;
+        }
+
+        await props.setSelectors(newSelectors);
 
         const activeTab = await getActiveTabAsync();
         if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'updateElementHideSelector', args: [props.getElementHideSelector()] });
-            await sendMessageToTabAsync(activeTab.id, { callee: 'updateTextHideSelector', args: [props.getTextHideSelector()] });
-            await sendMessageToTabAsync(activeTab.id, { callee: 'handleDeleteSelector', args: [newSelector.value] });
-
-            const hide = newSelector.hideMode === AppConstants.ElementHideMode
-                ? 'hideElements'
-                : 'hideText';
-            sendMessageToTabAsync(activeTab.id, { callee: hide, args: [newSelector.value, props.keywords] });
+            const refreshSelector = await props.getRefreshSelector();
+            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
+            sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
         }
 
         setAnchorEl(null);
@@ -355,6 +341,102 @@ export default function HideModeMenu(props: HideModeProps) {
                         key={index}
                         selected={index === selector.hideMode}
                         onClick={(event) => handleMenuItemClick(event, index)}
+                    >
+                        {option.icon}
+                        <span style={{ marginLeft: 9 }}>{option.text}</span>
+                    </MenuItem>
+                ))}
+            </Menu>
+        </>
+    );
+}
+
+interface SearchModeProps {
+    selectors: CssSelector[];
+    selectorIndex: number;
+    keywords: string[];
+    autoImportEnabled: boolean;
+    setSelectors(selectors: CssSelector[]): Promise<void>;
+    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
+}
+
+const searchOptions = [
+    {
+        icon: <KeyboardArrowDownIcon sx={{ fontSize: '1.4rem' }} />,
+        text: chrome.i18n.getMessage('shallowSearchModeDescription')
+    },
+    {
+        icon: <KeyboardDoubleArrowDownIcon sx={{ fontSize: '1.4rem' }} />,
+        text: chrome.i18n.getMessage('deepSearchModeDescription')
+    }
+];
+
+function SearchModeMenu(props: SearchModeProps) {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const selector = props.selectors[props.selectorIndex];
+
+    const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuItemClick = async (
+        event: React.MouseEvent<HTMLElement>,
+        index: number,
+    ) => {
+        const newSelectors = props.selectors.slice();
+        const newSelector = newSelectors[props.selectorIndex];
+        newSelector.searchMode = index;
+        await props.setSelectors(newSelectors);
+
+        const activeTab = await getActiveTabAsync();
+        if (activeTab.id) {
+            const refreshSelector = await props.getRefreshSelector();
+            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
+            sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
+        }
+
+        setAnchorEl(null);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    return (
+        <>
+            <IconButton
+                edge="end"
+                aria-label="more"
+                id="long-button"
+                aria-controls={open ? 'long-menu' : undefined}
+                aria-expanded={open ? 'true' : undefined}
+                aria-haspopup="true"
+                onClick={handleClickListItem}
+                sx={{ marginRight: '-9px' }}
+                disabled={props.autoImportEnabled}
+            >
+                {searchOptions[selector.searchMode ?? 0].icon}
+            </IconButton>
+            <Menu
+                id="lock-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                MenuListProps={{
+                    'aria-labelledby': 'lock-button',
+                    role: 'listbox',
+                    style: {
+                        padding: 0
+                    }
+                }}
+            >
+                {searchOptions.map((option, index) => (
+                    <MenuItem
+                        key={index}
+                        selected={index === selector.searchMode}
+                        onClick={async (event) => await handleMenuItemClick(event, index)}
+                        disabled={index === AppConstants.deepSearch && props.selectors[props.selectorIndex].hideMode === AppConstants.TextHideMode}
                     >
                         {option.icon}
                         <span style={{ marginLeft: 9 }}>{option.text}</span>

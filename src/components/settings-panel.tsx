@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Switch, TextField, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Slider, Switch, TextField, Typography } from '@mui/material';
 import { Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
 import { authorize, createFile, fileExists, revokeToken, updateFile } from '../cloud/dropbox';
@@ -9,18 +9,22 @@ import DOMPurify from 'dompurify';
 
 interface SettingsPanelProps {
     emoGuardian: string;
-    sites: Site[];
     dropboxIntegrationEnabled: boolean;
     autoImportEnabled: boolean;
     autoImportInterval: number;
     lastExport: Date | null;
     lastImport: Date | null;
+    blockingSpeed: number;
+    alwaysShowKeywords: boolean;
     setEmoGuardian(emoGuardian: string): void;
     setSites(sites: Site[]): void;
     setDropboxIntegrationEnabled(dropboxIntegrationEnabled: boolean): void;
     setAutoImportEnabled(autoImportEnabled: boolean): void;
     setAutoImportInterval(autoImportInterval: number): void;
     setLastExport(lastExport: Date): void;
+    setBlockingSpeed(blockingSpeed: number): void;
+    setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
+    getSites(): Promise<Site[]>;
     getSyncContents(): Promise<Object>;
 }
 
@@ -64,9 +68,13 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                 <Grid item xs={12}>
                     <Paper elevation={2}>
                         <RecommendSelector
-                            sites={this.props.sites}
+                            getSites={this.props.getSites}
                             setSites={this.props.setSites}
                             autoImportEnabled={this.props.autoImportEnabled}
+                            blockingSpeed={this.props.blockingSpeed}
+                            setBlockingSpeed={this.props.setBlockingSpeed}
+                            alwaysShowKeywords={this.props.alwaysShowKeywords}
+                            setAlwaysShowKeywords={this.props.setAlwaysShowKeywords}
                         ></RecommendSelector>
                     </Paper>
                 </Grid>
@@ -330,19 +338,23 @@ function AlertDialog(props: AlertDialogProps) {
 
 
 interface RecommendSelectorProps {
-    sites: Site[];
     autoImportEnabled: boolean;
+    blockingSpeed: number;
+    alwaysShowKeywords: boolean;
+    getSites(): Promise<Site[]>;
     setSites(sites: Site[]): void;
+    setBlockingSpeed(blockingSpeed: number): void;
+    setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
 }
 
 function RecommendSelector(props: RecommendSelectorProps) {
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
 
-    const resetRecommendSelectors = () => {
+    const resetRecommendSelectors = async () => {
         setIsLoading(true);
 
-        const newSites = props.sites.slice();
+        const newSites = (await props.getSites()).slice();
         const allSite = newSites.find(site => site.domain === AppConstants.AllSites);
         if (!allSite) {
             throw Error();
@@ -365,6 +377,16 @@ function RecommendSelector(props: RecommendSelectorProps) {
         >
             <ListItem>
                 <ListItemText
+                    primary={chrome.i18n.getMessage('alwaysShowKeywordList')}
+                />
+                <Switch
+                    edge="end"
+                    onChange={(event, checked) => props.setAlwaysShowKeywords(checked)}
+                    checked={props.alwaysShowKeywords}
+                />
+            </ListItem>
+            <ListItem>
+                <ListItemText
                     id="switch-list-label-bluetooth"
                     primary={chrome.i18n.getMessage('resetRecommendSelectorPrimary')}
                     secondary={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
@@ -384,6 +406,17 @@ function RecommendSelector(props: RecommendSelectorProps) {
                     setOpen={setDialogOpen}
                     resetRecommendSelectors={() => resetRecommendSelectors()}
                 ></SelectorResetAlertDialog>
+            </ListItem>
+            <ListItem>
+                <ListItemText
+                    primary={chrome.i18n.getMessage('blockingSpeed')}
+                    secondary={`${chrome.i18n.getMessage('blockingSpeedSecondary')}${chrome.i18n.getMessage('blockingSpeedHint')}`}
+                    sx={{ marginRight: 1 }}
+                />
+                <BlockingSpeedSelect
+                    blockingSpeed={props.blockingSpeed}
+                    setBlockingSpeed={props.setBlockingSpeed}
+                ></BlockingSpeedSelect>
             </ListItem>
         </List>
     );
@@ -425,5 +458,40 @@ function SelectorResetAlertDialog(props: SelectorResetAlertDialogProps) {
                 <Button onClick={agree} autoFocus>OK</Button>
             </DialogActions>
         </Dialog>
+    );
+}
+
+interface BlockingSpeedSelectProps {
+    blockingSpeed: number;
+    setBlockingSpeed(blockingSpeed: number): void;
+}
+
+function BlockingSpeedSelect(props: BlockingSpeedSelectProps) {
+    const handleChange = (event: Event, newValue: number | number[]) => {
+        const blockingSpeed = newValue as number;
+        props.setBlockingSpeed(blockingSpeed);
+    };
+
+    const marks = [
+        {
+            value: 0,
+            label: chrome.i18n.getMessage('fast'),
+        },
+        {
+            value: 100,
+            label: chrome.i18n.getMessage('slow'),
+        },
+    ];
+
+    return (
+        <Box sx={{ minWidth: 120 }}>
+            <Slider
+                value={props.blockingSpeed}
+                onChange={handleChange}
+                defaultValue={50}
+                aria-label="Default"
+                valueLabelDisplay="auto"
+                marks={marks} />
+        </Box>
     );
 }

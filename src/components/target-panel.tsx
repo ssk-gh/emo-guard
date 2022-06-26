@@ -16,9 +16,8 @@ interface TargetPanelProps {
     autoImportEnabled: boolean;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
-    setSelectors(selectors: CssSelector[]): void;
-    getElementHideSelector(): string;
-    getTextHideSelector(): string;
+    setSelectors(selectors: CssSelector[]): Promise<void>;
+    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
     currentIsActiveDomain(): boolean;
 }
 
@@ -35,7 +34,7 @@ class TargetPanel extends React.Component<TargetPanelProps> {
 
         const activeTab = await getActiveTabAsync();
         if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'updateEnabled', args: [newCurrentSite.enabled] });
+            await sendMessageToTabAsync(activeTab.id, { callee: 'togglePower', args: [newCurrentSite.enabled] });
         }
 
         this.props.setCurrentSite(newCurrentSite);
@@ -78,14 +77,12 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                     </Box>
                 </Grid>
                 <SelectorPanel
-                    sites={this.props.sites}
                     selectors={this.props.currentSite.cssSelectors}
                     keywords={this.props.keywords}
                     listHeight={330}
                     autoImportEnabled={this.props.autoImportEnabled}
                     setSelectors={this.props.setSelectors}
-                    getElementHideSelector={this.props.getElementHideSelector}
-                    getTextHideSelector={this.props.getTextHideSelector}
+                    getRefreshSelector={this.props.getRefreshSelector}
                     currentIsActiveDomain={this.props.currentIsActiveDomain}
                 ></SelectorPanel>
             </Grid>

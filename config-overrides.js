@@ -15,6 +15,8 @@ module.exports = {
 
     // Avoid including hashes in file names
     config.output.filename = 'static/js/[name].js';
+    const defaultMiniCssExtractPlugin = config.plugins.find(plugin => plugin.constructor.name === 'MiniCssExtractPlugin');
+    defaultMiniCssExtractPlugin.options.filename = 'static/css/[name].css';
 
     // Inject only the specified <script> into the `index.html`
     const defaultHtmlWebpackPlugin = config.plugins.find(plugin => plugin.constructor.name === 'HtmlWebpackPlugin');
