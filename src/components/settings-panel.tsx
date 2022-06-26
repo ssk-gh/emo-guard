@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Slider, Switch, TextField, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormHelperText, Grid, IconButton, InputLabel, List, ListItem, ListItemText, ListSubheader, MenuItem, Paper, Select, SelectChangeEvent, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
 import { authorize, createFile, fileExists, revokeToken, updateFile } from '../cloud/dropbox';
 import { Dropbox } from 'dropbox';
 import { LoadingButton } from '@mui/lab';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import DOMPurify from 'dompurify';
 
 interface SettingsPanelProps {
@@ -190,8 +191,13 @@ function DropboxIntegration(props: DropboxIntegrationProps) {
         >
             <ListItem>
                 <ListItemText
-                    primary={chrome.i18n.getMessage('integrateWithDropboxPrimary')}
-                    secondary={`${chrome.i18n.getMessage('integrateWithDropboxSecondary')}\n${chrome.i18n.getMessage('integrateWithDropboxNote')}`}
+                    primary={(
+                        <TextWithTooltip
+                            text={chrome.i18n.getMessage('integrateWithDropboxPrimary')}
+                            tooltipTitle={chrome.i18n.getMessage('integrateWithDropboxNote')}
+                        ></TextWithTooltip>
+                    )}
+                    secondary={chrome.i18n.getMessage('integrateWithDropboxSecondary')}
                     secondaryTypographyProps={{ style: { whiteSpace: 'pre-wrap' } }}
                     sx={{ marginRight: 1 }}
                 />
@@ -206,7 +212,12 @@ function DropboxIntegration(props: DropboxIntegrationProps) {
             </ListItem>
             <ListItem>
                 <ListItemText
-                    primary={chrome.i18n.getMessage('exportToDropboxPrimary')}
+                    primary={(
+                        <TextWithTooltip
+                            text={chrome.i18n.getMessage('exportToDropboxPrimary')}
+                            tooltipTitle={chrome.i18n.getMessage('exportToDropboxHelp')}
+                        ></TextWithTooltip>
+                    )}
                     secondary={`${chrome.i18n.getMessage('exportToDropboxSecondary')}${displayLastExport()}`}
                     secondaryTypographyProps={{ style: { whiteSpace: 'pre-wrap' } }}
                     sx={{ marginRight: 1 }}
@@ -388,8 +399,13 @@ function RecommendSelector(props: RecommendSelectorProps) {
             <ListItem>
                 <ListItemText
                     id="switch-list-label-bluetooth"
-                    primary={chrome.i18n.getMessage('resetRecommendSelectorPrimary')}
-                    secondary={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
+                    primary={(
+                        <TextWithTooltip
+                            text={chrome.i18n.getMessage('resetRecommendSelectorPrimary')}
+                            tooltipTitle={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
+                        ></TextWithTooltip>
+                    )}
+                    // secondary={`${chrome.i18n.getMessage('resetRecommendSelectorSecondary')}${AppConstants.RecommendCssSelectors.map(selector => selector.value).join(',')}`}
                     sx={{ marginRight: 1 }}
                 />
                 <LoadingButton
@@ -409,8 +425,13 @@ function RecommendSelector(props: RecommendSelectorProps) {
             </ListItem>
             <ListItem>
                 <ListItemText
-                    primary={chrome.i18n.getMessage('blockingSpeed')}
-                    secondary={`${chrome.i18n.getMessage('blockingSpeedSecondary')}${chrome.i18n.getMessage('blockingSpeedHint')}`}
+                    primary={(
+                        <TextWithTooltip
+                            text={chrome.i18n.getMessage('blockingSpeed')}
+                            tooltipTitle={chrome.i18n.getMessage('blockingSpeedHint')}
+                        ></TextWithTooltip>
+                    )}
+                    secondary={chrome.i18n.getMessage('blockingSpeedSecondary')}
                     sx={{ marginRight: 1 }}
                 />
                 <BlockingSpeedSelect
@@ -494,4 +515,24 @@ function BlockingSpeedSelect(props: BlockingSpeedSelectProps) {
                 marks={marks} />
         </Box>
     );
+}
+
+interface TextWithTooltipProps {
+    text: string;
+    tooltipTitle: string;
+}
+
+function TextWithTooltip(props: TextWithTooltipProps) {
+    return (
+        <Stack direction={'row'} alignItems={'center'}>
+            <Typography>
+                {props.text}
+            </Typography>
+            <Tooltip title={props.tooltipTitle}>
+                <IconButton size="small" color="primary" sx={{ paddingBottom: '7px' }}>
+                    <HelpOutlineIcon fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
+        </Stack>
+    )
 }

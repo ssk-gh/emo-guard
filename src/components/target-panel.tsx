@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { IconButton, TextField, Grid, Autocomplete, Box } from '@mui/material';
+import { IconButton, TextField, Grid, Autocomplete, Box, Tooltip } from '@mui/material';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import AllOutIcon from '@mui/icons-material/AllOut';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
@@ -49,12 +49,14 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                 </IconButton>
             )
             : (
-                <IconButton sx={{ padding: 0, mr: 1 }}>
-                    <PowerSettingsNewIcon
-                        color={this.props.currentSite.enabled ? 'primary' : 'disabled'}
-                        sx={{ fontSize: 60 }}
-                        onClick={() => this.toggleEnabled()} />
-                </IconButton>
+                <Tooltip enterDelay={600} title={this.props.currentSite.enabled ? chrome.i18n.getMessage('disablePowerTooltip') : chrome.i18n.getMessage('enablePowerTooltip')}>
+                    <IconButton sx={{ padding: 0, mr: 1 }}>
+                        <PowerSettingsNewIcon
+                            color={this.props.currentSite.enabled ? 'primary' : 'disabled'}
+                            sx={{ fontSize: 60 }}
+                            onClick={() => this.toggleEnabled()} />
+                    </IconButton>
+                </Tooltip>
             );
 
         return (

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Grid, TextField, List, IconButton, ListItem, ListItemSecondaryAction, ListItemText, Typography } from '@mui/material';
+import { Grid, TextField, List, IconButton, ListItem, ListItemSecondaryAction, ListItemText, Typography, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
@@ -80,13 +80,15 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
                     }}
                 />
                 <ListItemSecondaryAction>
-                    <IconButton
-                        onClick={async () => await this.deleteKeyword(index)}
-                        edge="end"
-                        aria-label="delete"
-                        disabled={this.props.autoImportEnabled}>
-                        <DeleteIcon />
-                    </IconButton>
+                    <Tooltip enterDelay={600} title={chrome.i18n.getMessage('delete')}>
+                        <IconButton
+                            onClick={async () => await this.deleteKeyword(index)}
+                            edge="end"
+                            aria-label="delete"
+                            disabled={this.props.autoImportEnabled}>
+                            <DeleteIcon />
+                        </IconButton>
+                    </Tooltip>
                 </ListItemSecondaryAction>
             </ListItem>
         ));
