@@ -8,6 +8,15 @@
     "cancel": {
         "message": "Cancel"
     },
+    "delete": {
+        "message": "Delete"
+    },
+    "show": {
+        "message": "Show"
+    },
+    "hide": {
+        "message": "Hide"
+    },
     "export": {
         "message": "Export"
     },
@@ -32,17 +41,32 @@
     "selectorAlreadyExistsError": {
         "message": "This CSS selector already exists."
     },
+    "interactiveModeTooltip": {
+        "message": "Inspect the CSS selector of the page you are browsing."
+    },
+    "elementHide": {
+        "message": "Hides elements"
+    },
+    "textHide": {
+        "message": "Hides text"
+    },
     "elementHideModeDescription": {
         "message": "Hides elements matching keywords"
     },
     "textHideModeDescription": {
         "message": "Hides text matching keywords"
     },
+    "shallowSearch": {
+        "message": "Shallow search"
+    },
+    "deepSearch": {
+        "message": "Deep Search"
+    },
     "shallowSearchModeDescription": {
-        "message": "Shallow search (Search from text of matched elements)"
+        "message": "Searches from the text of elements that matches the CSS selector."
     },
     "deepSearchModeDescription": {
-        "message": "Deep Search (Search from text of matched elements and its descendants)"
+        "message": "Searches from the text of elements and its descendants that matches the CSS selector."
     },
     "showKeywordList": {
         "message": "Show keyword list"
@@ -99,7 +123,10 @@
         "message": "Export to Dropbox"
     },
     "exportToDropboxSecondary": {
-        "message": "Exports app data to dropbox. You can import the exported data by enabling auto import in other browsers."
+        "message": "Exports app data to dropbox."
+    },
+    "exportToDropboxHelp": {
+        "message": "You can import the exported data by enabling auto import in other browsers."
     },
     "lastExport": {
         "message": "Last export"
@@ -162,6 +189,12 @@
         "message": "Adjusts the speed at which elements and text are hidden."
     },
     "blockingSpeedHint": {
-        "message": "The lower the number, the quicker it can be hidden, but the higher the load. The larger the number, the longer it takes to hide, but the lower the load. If you feel that the page is slow, try increasing the number."
+        "message": "The lower the number of blocking speed, the quicker it can be hidden, but the higher the load. Try to balance blocking speed and load to match your device's performance."
+    },
+    "enablePowerTooltip": {
+        "message": "Click to enable on this site."
+    },
+    "disablePowerTooltip": {
+        "message": "Click to disable on this site."
     }
 }

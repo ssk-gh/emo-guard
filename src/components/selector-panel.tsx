@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ListItem, ListItemText, ListItemSecondaryAction, IconButton, TextField, List, Grid, InputAdornment, MenuItem, Menu } from '@mui/material';
+import { ListItem, ListItemText, ListItemSecondaryAction, IconButton, TextField, List, Grid, InputAdornment, MenuItem, Menu, Tooltip, Stack, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -11,6 +11,7 @@ import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrow
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
 import { CssSelector } from '../App';
 import { AppConstants } from '../constants/app-constants';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import DOMPurify from 'dompurify';
 
 interface SelectorPanelProps {
@@ -192,22 +193,26 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         setSelectors={this.props.setSelectors}
                         getRefreshSelector={this.props.getRefreshSelector}
                     ></SearchModeMenu>
-                    <IconButton
-                        onClick={() => this.toggleVisibility(index)}
-                        edge="end"
-                        aria-label="Visibility"
-                        disabled={this.props.autoImportEnabled}
-                    >
-                        {this.getVisibilityIcon(cssSelector)}
-                    </IconButton>
-                    <IconButton
-                        onClick={() => this.deleteSelector(index)}
-                        edge="end"
-                        aria-label="delete"
-                        disabled={this.props.autoImportEnabled}
-                    >
-                        <DeleteIcon />
-                    </IconButton>
+                    <Tooltip enterDelay={600} title={cssSelector.visibility ? chrome.i18n.getMessage('show') : chrome.i18n.getMessage('hide')}>
+                        <IconButton
+                            onClick={() => this.toggleVisibility(index)}
+                            edge="end"
+                            aria-label="Visibility"
+                            disabled={this.props.autoImportEnabled}
+                        >
+                            {this.getVisibilityIcon(cssSelector)}
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip enterDelay={600} title={chrome.i18n.getMessage('delete')}>
+                        <IconButton
+                            onClick={() => this.deleteSelector(index)}
+                            edge="end"
+                            aria-label="delete"
+                            disabled={this.props.autoImportEnabled}
+                        >
+                            <DeleteIcon />
+                        </IconButton>
+                    </Tooltip>
                 </ListItemSecondaryAction>
             </ListItem>
         ));
@@ -235,13 +240,15 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         InputProps={{
                             endAdornment: (
                                 <InputAdornment position="end">
-                                    <IconButton
-                                        color={this.state.interactiveModeEnabled ? 'primary' : 'default'}
-                                        onClick={() => this.toggleInteractiveMode()}
-                                        disabled={this.props.autoImportEnabled}
-                                    >
-                                        <HighlightAltIcon />
-                                    </IconButton>
+                                    <Tooltip enterDelay={600} title={chrome.i18n.getMessage('interactiveModeTooltip')}>
+                                        <IconButton
+                                            color={this.state.interactiveModeEnabled ? 'primary' : 'default'}
+                                            onClick={() => this.toggleInteractiveMode()}
+                                            disabled={this.props.autoImportEnabled}
+                                        >
+                                            <HighlightAltIcon />
+                                        </IconButton>
+                                    </Tooltip>
                                 </InputAdornment>
                             )
                         }}
@@ -310,19 +317,21 @@ export default function HideModeMenu(props: HideModeProps) {
 
     return (
         <>
-            <IconButton
-                edge="end"
-                aria-label="more"
-                id="long-button"
-                aria-controls={open ? 'long-menu' : undefined}
-                aria-expanded={open ? 'true' : undefined}
-                aria-haspopup="true"
-                onClick={handleClickListItem}
-                sx={{ marginRight: '-9px' }}
-                disabled={props.autoImportEnabled}
-            >
-                {options[selector.hideMode ?? 0].icon}
-            </IconButton>
+            <Tooltip enterDelay={600} title={selector.hideMode ? chrome.i18n.getMessage('textHide') : chrome.i18n.getMessage('elementHide')}>
+                <IconButton
+                    edge="end"
+                    aria-label="more"
+                    id="long-button"
+                    aria-controls={open ? 'long-menu' : undefined}
+                    aria-expanded={open ? 'true' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleClickListItem}
+                    sx={{ marginRight: '-9px' }}
+                    disabled={props.autoImportEnabled}
+                >
+                    {options[selector.hideMode ?? 0].icon}
+                </IconButton>
+            </Tooltip>
             <Menu
                 id="lock-menu"
                 anchorEl={anchorEl}
@@ -363,11 +372,21 @@ interface SearchModeProps {
 const searchOptions = [
     {
         icon: <KeyboardArrowDownIcon sx={{ fontSize: '1.4rem' }} />,
-        text: chrome.i18n.getMessage('shallowSearchModeDescription')
+        text: (
+            <TextWithTooltip
+                text={chrome.i18n.getMessage('shallowSearch')}
+                tooltipTitle={chrome.i18n.getMessage('shallowSearchModeDescription')}
+            ></TextWithTooltip>
+        )
     },
     {
         icon: <KeyboardDoubleArrowDownIcon sx={{ fontSize: '1.4rem' }} />,
-        text: chrome.i18n.getMessage('deepSearchModeDescription')
+        text: (
+            <TextWithTooltip
+                text={chrome.i18n.getMessage('deepSearch')}
+                tooltipTitle={chrome.i18n.getMessage('deepSearchModeDescription')}
+            ></TextWithTooltip>
+        )
     }
 ];
 
@@ -405,19 +424,21 @@ function SearchModeMenu(props: SearchModeProps) {
 
     return (
         <>
-            <IconButton
-                edge="end"
-                aria-label="more"
-                id="long-button"
-                aria-controls={open ? 'long-menu' : undefined}
-                aria-expanded={open ? 'true' : undefined}
-                aria-haspopup="true"
-                onClick={handleClickListItem}
-                sx={{ marginRight: '-9px' }}
-                disabled={props.autoImportEnabled}
-            >
-                {searchOptions[selector.searchMode ?? 0].icon}
-            </IconButton>
+            <Tooltip enterDelay={600} title={selector.searchMode ? chrome.i18n.getMessage('deepSearch') : chrome.i18n.getMessage('shallowSearch')}>
+                <IconButton
+                    edge="end"
+                    aria-label="more"
+                    id="long-button"
+                    aria-controls={open ? 'long-menu' : undefined}
+                    aria-expanded={open ? 'true' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleClickListItem}
+                    sx={{ marginRight: '-9px' }}
+                    disabled={props.autoImportEnabled}
+                >
+                    {searchOptions[selector.searchMode ?? 0].icon}
+                </IconButton>
+            </Tooltip>
             <Menu
                 id="lock-menu"
                 anchorEl={anchorEl}
@@ -445,6 +466,26 @@ function SearchModeMenu(props: SearchModeProps) {
             </Menu>
         </>
     );
+}
+
+interface TextWithTooltipProps {
+    text: string;
+    tooltipTitle: string;
+}
+
+function TextWithTooltip(props: TextWithTooltipProps) {
+    return (
+        <Stack direction={'row'} alignItems={'center'}>
+            <Typography>
+                {props.text}
+            </Typography>
+            <Tooltip title={props.tooltipTitle}>
+                <IconButton size="small" color="primary" sx={{ paddingBottom: '7px' }}>
+                    <HelpOutlineIcon fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
+        </Stack>
+    )
 }
 
 export { SelectorPanel };

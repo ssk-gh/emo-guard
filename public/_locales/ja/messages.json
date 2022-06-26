@@ -8,6 +8,15 @@
     "cancel": {
         "message": "キャンセル"
     },
+    "delete": {
+        "message": "削除"
+    },
+    "show": {
+        "message": "表示"
+    },
+    "hide": {
+        "message": "非表示"
+    },
     "export": {
         "message": "エクスポート"
     },
@@ -24,13 +33,22 @@
         "message": "遅い"
     },
     "selectorTextFieldLabel": {
-        "message": "CSSセレクタを追加"
+        "message": "CSSセレクターを追加"
     },
     "selectorFormatError": {
-        "message": "CSSセレクタの形式が正しくありません。"
+        "message": "CSSセレクターの形式が正しくありません。"
     },
     "selectorAlreadyExistsError": {
-        "message": "このCSSセレクタは既に登録されています。"
+        "message": "このCSSセレクターは既に登録されています。"
+    },
+    "interactiveModeTooltip": {
+        "message": "閲覧中のページのCSSセレクターを検査"
+    },
+    "elementHide": {
+        "message": "要素を隠す"
+    },
+    "textHide": {
+        "message": "テキストを隠す"
     },
     "elementHideModeDescription": {
         "message": "キーワードと一致した要素を隠す"
@@ -38,11 +56,17 @@
     "textHideModeDescription": {
         "message": "キーワードと一致したテキストを隠す"
     },
+    "shallowSearch": {
+        "message": "シャローサーチ"
+    },
+    "deepSearch": {
+        "message": "ディープサーチ"
+    },
     "shallowSearchModeDescription": {
-        "message": "シャローサーチ（一致した要素のテキストから検索）"
+        "message": "CSSセレクターと一致した要素のテキストから検索します。"
     },
     "deepSearchModeDescription": {
-        "message": "ディープサーチ（一致した要素とその子孫要素のテキストから検索）"
+        "message": "CSSセレクターと一致した要素とその子孫要素のテキストから検索します。"
     },
     "showKeywordList": {
         "message": "キーワードリストを表示"
@@ -99,7 +123,10 @@
         "message": "Dropboxにエクスポート"
     },
     "exportToDropboxSecondary": {
-        "message": "現在のデータをDropboxにエクスポートします。他のブラウザで自動インポートを有効にすると、エクスポートしたデータを読み込むことができます。"
+        "message": "現在のデータをDropboxにエクスポートします。"
+    },
+    "exportToDropboxHelp": {
+        "message": "他のブラウザで自動インポートを有効にすると、エクスポートしたデータを読み込むことができます。"
     },
     "lastExport": {
         "message": "最後のエクスポート"
@@ -108,7 +135,7 @@
         "message": "自動インポートを有効にしますか？"
     },
     "autoImportConfirmDialogText": {
-        "message": "自動インポートを有効にすると、このブラウザで設定されているCSSセレクタとキーワードは全て削除され、代わりにクラウド上にエクスポートされたデータが読み込まれます。また、このブラウザではCSSセレクタやキーワードの追加・削除ができなくなります。"
+        "message": "自動インポートを有効にすると、このブラウザで設定されているCSSセレクターとキーワードは全て削除され、代わりにクラウド上にエクスポートされたデータが読み込まれます。また、このブラウザではCSSセレクターやキーワードの追加・削除ができなくなります。"
     },
     "autoImportInterval": {
         "message": "自動インポートの間隔"
@@ -123,19 +150,19 @@
         "message": "キーワードリストを常に表示"
     },
     "resetRecommendSelectorPrimary": {
-        "message": "おすすめCSSセレクタのリセット"
+        "message": "おすすめCSSセレクターのリセット"
     },
     "resetRecommendSelectorSecondary": {
-        "message": "以下のCSSセレクタをインストール時の設定に戻します。"
+        "message": "以下のCSSセレクターをインストール時の設定に戻します。"
     },
     "resetRecommendSelectorConfirmDialogTitle": {
-        "message": "おすすめCSSセレクタをリセットしますか？"
+        "message": "おすすめCSSセレクターをリセットしますか？"
     },
     "resetRecommendSelectorConfirmDialogText": {
-        "message": "おすすめCSSセレクタをインストール時の設定に戻します。この操作は取り消すことができません。"
+        "message": "おすすめCSSセレクターをインストール時の設定に戻します。この操作は取り消すことができません。"
     },
     "selectorRegistrationAlert": {
-        "message": "CSSセレクタを登録しました！"
+        "message": "CSSセレクターを登録しました！"
     },
     "fiveMinutes": {
         "message": "5分"
@@ -162,6 +189,12 @@
         "message": "要素やテキストを非表示にする速度を調整します。"
     },
     "blockingSpeedHint": {
-        "message": "数字が小さいほど素早く非表示にできますが、負荷が上がります。数字が大きいほど非表示までに時間がかかりますが、低負荷です。動作が重いと感じるときには数字を大きくしてみてください。"
+        "message": "ブロック速度の数値が小さいほど素早く非表示にできますが、負荷が上がります。デバイスの性能に合わせてブロック速度とパフォーマンスのバランスを調整してください。"
+    },
+    "enablePowerTooltip": {
+        "message": "クリックするとこのサイトで有効にします。"
+    },
+    "disablePowerTooltip": {
+        "message": "クリックするとこのサイトで無効にします。"
     }
 }
