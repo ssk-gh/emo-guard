@@ -11,6 +11,7 @@ export interface AppState {
   activeDomain: string;
   autoImportEnabled: boolean;
   alwaysShowKeywords: boolean;
+  canInteract: boolean;
 }
 
 export interface Site {
@@ -41,7 +42,8 @@ class App extends React.Component<{}, AppState> {
       currentSiteIndex: 0,
       activeDomain: '',
       autoImportEnabled: false,
-      alwaysShowKeywords: false
+      alwaysShowKeywords: false,
+      canInteract: true
     };
   }
 
@@ -78,11 +80,16 @@ class App extends React.Component<{}, AppState> {
     }
 
     const activeUrl = new URL(activeTab.url);
-    this.setState({ activeDomain: activeUrl.hostname });
+    this.setState({
+      activeDomain: activeUrl.hostname,
+      canInteract: activeUrl.protocol.startsWith('http')
+    });
 
     const currentSiteIndex = this.state.sites.findIndex(site => site.domain === activeUrl.hostname);
     if (currentSiteIndex >= 0) {
       this.setState({ currentSiteIndex: currentSiteIndex });
+    } else if (!this.state.canInteract) {
+      this.setState({ currentSiteIndex: this.state.sites.findIndex(site => site.domain === AppConstants.AllSites) });
     } else {
       const currentSite = {
         domain: activeUrl.hostname,
@@ -174,6 +181,7 @@ class App extends React.Component<{}, AppState> {
           activeDomain={this.state.activeDomain}
           autoImportEnabled={this.state.autoImportEnabled}
           alwaysShowKeywords={this.state.alwaysShowKeywords}
+          canInteract={this.state.canInteract}
           setKeywords={this.setKeywords}
           setSelectors={this.setSelectors}
           setSites={this.setSites}

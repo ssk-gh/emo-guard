@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.alarms.create({ delayInMinutes: message.args[0] });
             break;
         default:
-            throw new Error(`Unknown message: ${message}`);
+            break;
     }
     sendResponse();
 });

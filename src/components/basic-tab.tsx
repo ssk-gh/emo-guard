@@ -51,6 +51,7 @@ interface BasicTabsProps {
     activeDomain: string;
     autoImportEnabled: boolean;
     alwaysShowKeywords: boolean;
+    canInteract: boolean;
     setKeywords(keywords: string[]): Promise<void>;
     setSelectors(selectors: CssSelector[]): Promise<void>;
     setSites(sites: Site[]): void;
@@ -85,6 +86,7 @@ export default function BasicTabs(props: BasicTabsProps) {
                     keywords={props.keywords}
                     activeDomain={props.activeDomain}
                     autoImportEnabled={props.autoImportEnabled}
+                    canInteract={props.canInteract}
                     setCurrentSite={props.setCurrentSite}
                     setCurrentSiteIndex={props.setCurrentSiteIndex}
                     setSelectors={props.setSelectors}
@@ -98,6 +100,7 @@ export default function BasicTabs(props: BasicTabsProps) {
                     currentSite={props.sites[props.currentSiteIndex]}
                     autoImportEnabled={props.autoImportEnabled}
                     alwaysShowKeywords={props.alwaysShowKeywords}
+                    canInteract={props.canInteract}
                     setKeywords={props.setKeywords}
                 ></KeywordPanel>
             </TabPanel>
