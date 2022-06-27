@@ -115,7 +115,7 @@ class ContentScript {
                     this.endInteractiveMode();
                     break;
                 default:
-                    throw new Error(`Unknown message: ${message}`);
+                    break;
             }
             sendResponse();
         });

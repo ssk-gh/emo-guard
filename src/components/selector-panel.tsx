@@ -19,6 +19,7 @@ interface SelectorPanelProps {
     keywords: string[];
     listHeight: number;
     autoImportEnabled: boolean;
+    canInteract: boolean;
     setSelectors(selectors: CssSelector[]): Promise<void>;
     getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
     currentIsActiveDomain(): boolean;
@@ -48,7 +49,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                     this.setState({ selector: message.args[0] });
                     break;
                 default:
-                    throw new Error(`Unknown message: ${message}`);
+                    break;
             }
             sendResponse();
         });
@@ -91,23 +92,16 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
         ]);
 
         await this.props.setSelectors(newSelectors);
+        this.setState({ selector: '' });
 
-        if (this.props.currentIsActiveDomain()) {
-            const activeTab = await getActiveTabAsync();
-            if (activeTab.id) {
-                if (!this.props.keywords.length) {
-                    return;
-                }
-                const refreshSelector = await this.props.getRefreshSelector();
-                await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
-                sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
-                if (this.state.interactiveModeEnabled) {
-                    this.toggleInteractiveMode();
-                }
-            }
+        if (this.state.interactiveModeEnabled) {
+            this.toggleInteractiveMode();
+        }
+        if (!this.props.keywords.length) {
+            return;
         }
 
-        this.setState({ selector: '' });
+        refreshSelector(this.props.canInteract, this.props.currentIsActiveDomain, this.props.getRefreshSelector);
     }
 
     changeSelector(event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) {
@@ -117,38 +111,26 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
     async deleteSelector(index: number) {
         const newSelectors = this.props.selectors.slice();
         newSelectors.splice(index, 1);
-
         await this.props.setSelectors(newSelectors);
 
-        if (this.props.currentIsActiveDomain()) {
-            const activeTab = await getActiveTabAsync();
-            if (activeTab.id) {
-                const refreshSelector = await this.props.getRefreshSelector();
-                await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
-                sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
-            }
-        }
+        refreshSelector(this.props.canInteract, this.props.currentIsActiveDomain, this.props.getRefreshSelector);
     }
 
     async toggleVisibility(index: number) {
         const newVisibility = !this.props.selectors[index].visibility;
         const newSelectors = this.props.selectors.slice();
         newSelectors[index].visibility = newVisibility;
-
         await this.props.setSelectors(newSelectors);
 
-        if (this.props.currentIsActiveDomain()) {
-            const activeTab = await getActiveTabAsync();
-            if (activeTab.id) {
-                const refreshSelector = await this.props.getRefreshSelector();
-                await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
-                sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
-            }
-        }
+        refreshSelector(this.props.canInteract, this.props.currentIsActiveDomain, this.props.getRefreshSelector);
     }
 
     async toggleInteractiveMode() {
         this.setState({ interactiveModeEnabled: !this.state.interactiveModeEnabled });
+        if (!this.props.canInteract) {
+            return;
+        }
+
         const activeTab = await getActiveTabAsync();
         if (activeTab.id) {
             if (this.state.interactiveModeEnabled) {
@@ -185,6 +167,8 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         autoImportEnabled={this.props.autoImportEnabled}
                         setSelectors={this.props.setSelectors}
                         getRefreshSelector={this.props.getRefreshSelector}
+                        currentIsActiveDomain={this.props.currentIsActiveDomain}
+                        canInteract={this.props.canInteract}
                     ></HideModeMenu>
                     <SearchModeMenu
                         selectors={this.props.selectors}
@@ -193,6 +177,8 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                         autoImportEnabled={this.props.autoImportEnabled}
                         setSelectors={this.props.setSelectors}
                         getRefreshSelector={this.props.getRefreshSelector}
+                        currentIsActiveDomain={this.props.currentIsActiveDomain}
+                        canInteract={this.props.canInteract}
                     ></SearchModeMenu>
                     <Tooltip enterDelay={600} title={cssSelector.visibility ? chrome.i18n.getMessage('show') : chrome.i18n.getMessage('hide')}>
                         <IconButton
@@ -246,7 +232,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                                         <IconButton
                                             color={this.state.interactiveModeEnabled ? 'primary' : 'default'}
                                             onClick={() => this.toggleInteractiveMode()}
-                                            disabled={this.props.autoImportEnabled}
+                                            disabled={this.props.autoImportEnabled || !this.props.canInteract || !this.props.currentIsActiveDomain()}
                                         >
                                             <HighlightAltIcon />
                                         </IconButton>
@@ -266,8 +252,10 @@ interface HideModeProps {
     selectorIndex: number;
     keywords: string[];
     autoImportEnabled: boolean;
+    canInteract: boolean;
     setSelectors(selectors: CssSelector[]): Promise<void>;
     getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
+    currentIsActiveDomain(): boolean;
 }
 
 const options = [
@@ -302,13 +290,7 @@ export default function HideModeMenu(props: HideModeProps) {
         }
 
         await props.setSelectors(newSelectors);
-
-        const activeTab = await getActiveTabAsync();
-        if (activeTab.id) {
-            const refreshSelector = await props.getRefreshSelector();
-            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
-            sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
-        }
+        refreshSelector(props.canInteract, props.currentIsActiveDomain, props.getRefreshSelector);
 
         setAnchorEl(null);
     };
@@ -367,8 +349,10 @@ interface SearchModeProps {
     selectorIndex: number;
     keywords: string[];
     autoImportEnabled: boolean;
+    canInteract: boolean;
     setSelectors(selectors: CssSelector[]): Promise<void>;
     getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
+    currentIsActiveDomain(): boolean;
 }
 
 const searchOptions = [
@@ -408,14 +392,9 @@ function SearchModeMenu(props: SearchModeProps) {
         const newSelectors = props.selectors.slice();
         const newSelector = newSelectors[props.selectorIndex];
         newSelector.searchMode = index;
-        await props.setSelectors(newSelectors);
 
-        const activeTab = await getActiveTabAsync();
-        if (activeTab.id) {
-            const refreshSelector = await props.getRefreshSelector();
-            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
-            sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
-        }
+        await props.setSelectors(newSelectors);
+        refreshSelector(props.canInteract, props.currentIsActiveDomain, props.getRefreshSelector);
 
         setAnchorEl(null);
     };
@@ -488,6 +467,27 @@ function TextWithTooltip(props: TextWithTooltipProps) {
             </Tooltip>
         </Stack>
     )
+}
+
+const refreshSelector = async (
+    canInteract: boolean,
+    currentIsActiveDomain: () => boolean,
+    getRefreshSelector: () => Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>
+) => {
+    if (!canInteract) {
+        return;
+    }
+    if (!currentIsActiveDomain()) {
+        return;
+    }
+    const activeTab = await getActiveTabAsync();
+    if (!activeTab.id) {
+        return
+    }
+
+    const refreshSelector = await getRefreshSelector();
+    await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [refreshSelector] });
+    sendMessageToTabAsync(activeTab.id, { callee: 'refreshSelector', args: [refreshSelector] });
 }
 
 export { SelectorPanel };

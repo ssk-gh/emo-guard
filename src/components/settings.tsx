@@ -95,7 +95,7 @@ class Settings extends React.Component<{}, SettingsState> {
                     this.setLastImport(lastImport);
                     break;
                 default:
-                    throw new Error(`Unknown message: ${message}`);
+                    break;
             }
             sendResponse();
         });

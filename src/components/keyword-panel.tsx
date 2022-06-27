@@ -11,6 +11,7 @@ interface KeywordProps {
     currentSite: Site;
     autoImportEnabled: boolean;
     alwaysShowKeywords: boolean;
+    canInteract: boolean;
     setKeywords(keywords: string[]): Promise<void>;
 }
 
@@ -46,13 +47,15 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
 
         const keywords = this.props.keywords.concat([cleanedKeyword]);
         await this.props.setKeywords(keywords);
+        this.setState({ keyword: '' });
+
         const activeTab = await getActiveTabAsync();
-        if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [{ keywords: keywords }] });
-            sendMessageToTabAsync(activeTab.id, { callee: 'hideWithKeyword', args: [[cleanedKeyword]] });
+        if (!activeTab.id || !this.props.canInteract) {
+            return;
         }
 
-        this.setState({ keyword: '' });
+        await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [{ keywords: keywords }] });
+        sendMessageToTabAsync(activeTab.id, { callee: 'hideWithKeyword', args: [[cleanedKeyword]] });
     }
 
     async deleteKeyword(index: number) {
@@ -62,10 +65,12 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
         await this.props.setKeywords(keywords);
 
         const activeTab = await getActiveTabAsync();
-        if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [{ keywords: keywords }] });
-            sendMessageToTabAsync(activeTab.id, { callee: 'refreshKeyword', args: [keywords] });
+        if (!activeTab.id || !this.props.canInteract) {
+            return;
         }
+
+        await sendMessageToTabAsync(activeTab.id, { callee: 'setState', args: [{ keywords: keywords }] });
+        sendMessageToTabAsync(activeTab.id, { callee: 'refreshKeyword', args: [keywords] });
     }
 
     generateKeywordListItems() {

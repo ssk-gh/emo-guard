@@ -14,6 +14,7 @@ interface TargetPanelProps {
     keywords: string[];
     activeDomain: string;
     autoImportEnabled: boolean;
+    canInteract: boolean;
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
     setSelectors(selectors: CssSelector[]): Promise<void>;
@@ -31,13 +32,14 @@ class TargetPanel extends React.Component<TargetPanelProps> {
     async toggleEnabled() {
         const newCurrentSite = Object.assign({}, this.props.currentSite);
         newCurrentSite.enabled = !this.props.currentSite.enabled;
+        this.props.setCurrentSite(newCurrentSite);
 
         const activeTab = await getActiveTabAsync();
-        if (activeTab.id) {
-            await sendMessageToTabAsync(activeTab.id, { callee: 'togglePower', args: [newCurrentSite.enabled] });
+        if (!activeTab.id || !this.props.canInteract) {
+            return;
         }
 
-        this.props.setCurrentSite(newCurrentSite);
+        await sendMessageToTabAsync(activeTab.id, { callee: 'togglePower', args: [newCurrentSite.enabled] });
     }
 
     render() {
@@ -86,6 +88,7 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                     setSelectors={this.props.setSelectors}
                     getRefreshSelector={this.props.getRefreshSelector}
                     currentIsActiveDomain={this.props.currentIsActiveDomain}
+                    canInteract={this.props.canInteract}
                 ></SelectorPanel>
             </Grid>
         );
