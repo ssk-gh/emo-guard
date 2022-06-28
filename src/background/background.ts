@@ -1,7 +1,8 @@
 import { Dropbox } from "dropbox";
-import { Site } from "./App";
-import { AppConstants } from "./constants/app-constants";
-import { authorize, fetchFile } from "./cloud/dropbox";
+import { AppConstants } from "../constants/app-constants";
+import { authorize, fetchFile } from "../cloud/dropbox";
+import { Site } from "../types";
+import { removeEmptySites } from "../utils/common";
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
@@ -80,7 +81,5 @@ const importBlockListIfEnabled = async () => {
     });
     chrome.runtime.sendMessage({ callee: 'updateLastImport', args: [now] });
 };
-
-const removeEmptySites = (sites: Site[]) => sites.filter(site => site.cssSelectors.length || !site.enabled || site.domain === AppConstants.AllSites);
 
 export { }

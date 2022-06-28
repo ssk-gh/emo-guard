@@ -4,13 +4,18 @@ const Dotenv = require('dotenv-webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
+  paths: function (paths, env) {
+    paths.appIndexJs = path.resolve('src/popup/index.tsx');
+    return paths;
+  },
   webpack: function (config, env) {
     // Add files to build
     config.entry = {
-      main: [path.resolve('src/index')],
-      options: [path.resolve('src/options')],
-      'content-script': [path.resolve('src/content-script')],
-      background: [path.resolve('src/background')]
+      // Assign the popup as main because `main` entry is required
+      main: [path.resolve('src/popup/index')],
+      options: [path.resolve('src/options/index')],
+      'content-script': [path.resolve('src/content-script/content-script')],
+      background: [path.resolve('src/background/background')]
     };
 
     // Avoid including hashes in file names
@@ -18,8 +23,9 @@ module.exports = {
     const defaultMiniCssExtractPlugin = config.plugins.find(plugin => plugin.constructor.name === 'MiniCssExtractPlugin');
     defaultMiniCssExtractPlugin.options.filename = 'static/css/[name].css';
 
-    // Inject only the specified <script> into the `index.html`
+    // Inject only the specified <script> into the `popup.html`
     const defaultHtmlWebpackPlugin = config.plugins.find(plugin => plugin.constructor.name === 'HtmlWebpackPlugin');
+    defaultHtmlWebpackPlugin.userOptions.filename = 'popup.html'
     defaultHtmlWebpackPlugin.userOptions.chunks = ['main'];
 
     // Add multiple entry points
@@ -27,7 +33,7 @@ module.exports = {
       new HtmlWebpackPlugin({
         inject: true,
         filename: 'options.html',
-        template: 'public/options.html',
+        template: 'public/index.html',
         chunks: ['options'],
         minify: Object.assign({}, defaultHtmlWebpackPlugin.userOptions.minify)
       })

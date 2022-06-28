@@ -8,41 +8,8 @@ import { KeywordPanel } from './keyword-panel';
 import BlockIcon from '@mui/icons-material/Block';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { CssSelector, Site } from '../App';
 import { IconButton, Menu, MenuItem } from '@mui/material';
-
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
-
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box sx={{ p: 3 }}>
-                    <Typography>{children}</Typography>
-                </Box>
-            )}
-        </div>
-    );
-}
-
-function a11yProps(index: number) {
-    return {
-        id: `simple-tab-${index}`,
-        'aria-controls': `simple-tabpanel-${index}`,
-    };
-}
+import { Site, CssSelector, RefreshSelector } from '../types';
 
 interface BasicTabsProps {
     keywords: string[];
@@ -58,7 +25,7 @@ interface BasicTabsProps {
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
     setAutoImportEnabled(autoImportEnabled: boolean): void;
-    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
+    getRefreshSelector(): Promise<RefreshSelector>;
     currentIsActiveDomain(): boolean;
 }
 
@@ -72,7 +39,7 @@ export default function BasicTabs(props: BasicTabsProps) {
     return (
         <Box sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+                <Tabs value={value} onChange={handleChange} aria-label="tabs">
                     <Tab icon={<FindInPageIcon />} {...a11yProps(0)} />
                     <Tab icon={<BlockIcon />} {...a11yProps(1)} />
                     <MoreVertMenu></MoreVertMenu>
@@ -80,32 +47,51 @@ export default function BasicTabs(props: BasicTabsProps) {
             </Box>
             <TabPanel value={value} index={0}>
                 <TargetPanel
-                    sites={props.sites}
+                    {...props}
                     currentSite={props.sites[props.currentSiteIndex]}
-                    currentSiteIndex={props.currentSiteIndex}
-                    keywords={props.keywords}
-                    activeDomain={props.activeDomain}
-                    autoImportEnabled={props.autoImportEnabled}
-                    canInteract={props.canInteract}
-                    setCurrentSite={props.setCurrentSite}
-                    setCurrentSiteIndex={props.setCurrentSiteIndex}
-                    setSelectors={props.setSelectors}
-                    getRefreshSelector={props.getRefreshSelector}
-                    currentIsActiveDomain={props.currentIsActiveDomain}
                 ></TargetPanel>
             </TabPanel>
             <TabPanel value={value} index={1}>
                 <KeywordPanel
-                    keywords={props.keywords}
+                    {...props}
                     currentSite={props.sites[props.currentSiteIndex]}
-                    autoImportEnabled={props.autoImportEnabled}
-                    alwaysShowKeywords={props.alwaysShowKeywords}
-                    canInteract={props.canInteract}
-                    setKeywords={props.setKeywords}
                 ></KeywordPanel>
             </TabPanel>
         </Box>
     );
+}
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`tabpanel-${index}`}
+            aria-labelledby={`tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    );
+}
+
+function a11yProps(index: number) {
+    return {
+        id: `tab-${index}`,
+        'aria-controls': `tabpanel-${index}`,
+    };
 }
 
 function MoreVertMenu() {
@@ -121,8 +107,8 @@ function MoreVertMenu() {
     return (
         <Box marginY={'auto'} marginLeft={'auto'} marginRight={'6px'}>
             <IconButton
-                id="basic-button"
-                aria-controls={open ? 'basic-menu' : undefined}
+                id="more-vert-button"
+                aria-controls={open ? 'more-vert-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
                 onClick={handleClick}
@@ -130,12 +116,12 @@ function MoreVertMenu() {
                 <MoreVertIcon />
             </IconButton>
             <Menu
-                id="basic-menu"
+                id="more-vert-menu"
                 anchorEl={anchorEl}
                 open={open}
                 onClose={handleClose}
                 MenuListProps={{
-                    'aria-labelledby': 'basic-button',
+                    'aria-labelledby': 'more-vert-button',
                     style: {
                         padding: 0
                     }

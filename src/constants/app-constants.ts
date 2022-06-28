@@ -1,4 +1,4 @@
-import { CssSelector } from "../App";
+import { CssSelector } from "../types";
 
 export class AppConstants {
     static readonly AppName = 'EmoGuard';

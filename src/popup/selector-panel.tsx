@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ListItem, ListItemText, ListItemSecondaryAction, IconButton, TextField, List, Grid, InputAdornment, MenuItem, Menu, Tooltip, Stack, Typography } from '@mui/material';
+import { ListItem, ListItemText, ListItemSecondaryAction, IconButton, TextField, List, Grid, InputAdornment, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -9,10 +9,11 @@ import FontDownloadOffIcon from '@mui/icons-material/FontDownloadOff';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
-import { CssSelector } from '../App';
 import { AppConstants } from '../constants/app-constants';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import DOMPurify from 'dompurify';
+import { CssSelector, ModeOption, RefreshSelector } from '../types';
+import { TextWithTooltip } from '../components/text-with-tooltip';
+import ModeMenu from '../components/mode-menu';
 
 interface SelectorPanelProps {
     selectors: CssSelector[];
@@ -21,7 +22,7 @@ interface SelectorPanelProps {
     autoImportEnabled: boolean;
     canInteract: boolean;
     setSelectors(selectors: CssSelector[]): Promise<void>;
-    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
+    getRefreshSelector(): Promise<RefreshSelector>;
     currentIsActiveDomain(): boolean;
 }
 
@@ -147,6 +148,27 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
             : <VisibilityOffIcon />
     }
 
+    async handleHideModeMenuItemClick(event: React.MouseEvent<HTMLElement>, menuIndex: number, selectorIndex: number) {
+        const newSelectors = this.props.selectors.slice();
+        const newSelector = newSelectors[selectorIndex];
+        newSelector.hideMode = menuIndex;
+        if (menuIndex === AppConstants.TextHideMode) {
+            newSelector.searchMode = AppConstants.shallowSearch;
+        }
+
+        await this.props.setSelectors(newSelectors);
+        refreshSelector(this.props.canInteract, this.props.currentIsActiveDomain, this.props.getRefreshSelector);
+    }
+
+    async handleSearchModeMenuItemClick(event: React.MouseEvent<HTMLElement>, menuIndex: number, selectorIndex: number) {
+        const newSelectors = this.props.selectors.slice();
+        const newSelector = newSelectors[selectorIndex];
+        newSelector.searchMode = menuIndex;
+
+        await this.props.setSelectors(newSelectors);
+        refreshSelector(this.props.canInteract, this.props.currentIsActiveDomain, this.props.getRefreshSelector);
+    }
+
     generateSelectorListItems() {
         return this.props.selectors.map((cssSelector, index) => (
             <ListItem sx={{ paddingRight: 18, justifyContent: 'center' }}>
@@ -160,26 +182,22 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
                     }}
                 />
                 <ListItemSecondaryAction>
-                    <HideModeMenu
-                        selectors={this.props.selectors}
-                        selectorIndex={index}
-                        keywords={this.props.keywords}
-                        autoImportEnabled={this.props.autoImportEnabled}
-                        setSelectors={this.props.setSelectors}
-                        getRefreshSelector={this.props.getRefreshSelector}
-                        currentIsActiveDomain={this.props.currentIsActiveDomain}
-                        canInteract={this.props.canInteract}
-                    ></HideModeMenu>
-                    <SearchModeMenu
-                        selectors={this.props.selectors}
-                        selectorIndex={index}
-                        keywords={this.props.keywords}
-                        autoImportEnabled={this.props.autoImportEnabled}
-                        setSelectors={this.props.setSelectors}
-                        getRefreshSelector={this.props.getRefreshSelector}
-                        currentIsActiveDomain={this.props.currentIsActiveDomain}
-                        canInteract={this.props.canInteract}
-                    ></SearchModeMenu>
+                    <ModeMenu
+                        options={hideOptions}
+                        selected={this.props.selectors[index].hideMode}
+                        tooltipTitle={this.props.selectors[index].hideMode ? chrome.i18n.getMessage('textHide') : chrome.i18n.getMessage('elementHide')}
+                        anchorDisabled={this.props.autoImportEnabled}
+                        menuItemDisabled={() => false}
+                        handleMenuItemClick={(event, menuIndex) => this.handleHideModeMenuItemClick(event, menuIndex, index)}
+                    ></ModeMenu>
+                    <ModeMenu
+                        options={searchOptions}
+                        selected={this.props.selectors[index].searchMode}
+                        tooltipTitle={this.props.selectors[index].searchMode ? chrome.i18n.getMessage('deepSearch') : chrome.i18n.getMessage('shallowSearch')}
+                        anchorDisabled={this.props.autoImportEnabled}
+                        menuItemDisabled={(menuIndex) => menuIndex === AppConstants.deepSearch && this.props.selectors[index].hideMode === AppConstants.TextHideMode}
+                        handleMenuItemClick={(event, menuIndex) => this.handleSearchModeMenuItemClick(event, menuIndex, index)}
+                    ></ModeMenu>
                     <Tooltip enterDelay={600} title={cssSelector.visibility ? chrome.i18n.getMessage('show') : chrome.i18n.getMessage('hide')}>
                         <IconButton
                             onClick={() => this.toggleVisibility(index)}
@@ -247,18 +265,7 @@ class SelectorPanel extends React.Component<SelectorPanelProps, SelectorPanelSta
     }
 }
 
-interface HideModeProps {
-    selectors: CssSelector[];
-    selectorIndex: number;
-    keywords: string[];
-    autoImportEnabled: boolean;
-    canInteract: boolean;
-    setSelectors(selectors: CssSelector[]): Promise<void>;
-    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
-    currentIsActiveDomain(): boolean;
-}
-
-const options = [
+const hideOptions: ModeOption[] = [
     {
         icon: <CodeOffIcon sx={{ fontSize: '1.4rem' }} />,
         text: chrome.i18n.getMessage('elementHideModeDescription')
@@ -269,93 +276,7 @@ const options = [
     }
 ];
 
-export default function HideModeMenu(props: HideModeProps) {
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-    const selector = props.selectors[props.selectorIndex];
-
-    const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuItemClick = async (
-        event: React.MouseEvent<HTMLElement>,
-        index: number,
-    ) => {
-        const newSelectors = props.selectors.slice();
-        const newSelector = newSelectors[props.selectorIndex];
-        newSelector.hideMode = index;
-        if (index === AppConstants.TextHideMode) {
-            newSelector.searchMode = AppConstants.shallowSearch;
-        }
-
-        await props.setSelectors(newSelectors);
-        refreshSelector(props.canInteract, props.currentIsActiveDomain, props.getRefreshSelector);
-
-        setAnchorEl(null);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    return (
-        <>
-            <Tooltip enterDelay={600} title={selector.hideMode ? chrome.i18n.getMessage('textHide') : chrome.i18n.getMessage('elementHide')}>
-                <IconButton
-                    edge="end"
-                    aria-label="more"
-                    id="long-button"
-                    aria-controls={open ? 'long-menu' : undefined}
-                    aria-expanded={open ? 'true' : undefined}
-                    aria-haspopup="true"
-                    onClick={handleClickListItem}
-                    sx={{ marginRight: '-9px' }}
-                    disabled={props.autoImportEnabled}
-                >
-                    {options[selector.hideMode ?? 0].icon}
-                </IconButton>
-            </Tooltip>
-            <Menu
-                id="lock-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                MenuListProps={{
-                    'aria-labelledby': 'lock-button',
-                    role: 'listbox',
-                    style: {
-                        padding: 0
-                    }
-                }}
-            >
-                {options.map((option, index) => (
-                    <MenuItem
-                        key={index}
-                        selected={index === selector.hideMode}
-                        onClick={(event) => handleMenuItemClick(event, index)}
-                    >
-                        {option.icon}
-                        <span style={{ marginLeft: 9 }}>{option.text}</span>
-                    </MenuItem>
-                ))}
-            </Menu>
-        </>
-    );
-}
-
-interface SearchModeProps {
-    selectors: CssSelector[];
-    selectorIndex: number;
-    keywords: string[];
-    autoImportEnabled: boolean;
-    canInteract: boolean;
-    setSelectors(selectors: CssSelector[]): Promise<void>;
-    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
-    currentIsActiveDomain(): boolean;
-}
-
-const searchOptions = [
+const searchOptions: ModeOption[] = [
     {
         icon: <KeyboardArrowDownIcon sx={{ fontSize: '1.4rem' }} />,
         text: (
@@ -376,103 +297,10 @@ const searchOptions = [
     }
 ];
 
-function SearchModeMenu(props: SearchModeProps) {
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-    const selector = props.selectors[props.selectorIndex];
-
-    const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuItemClick = async (
-        event: React.MouseEvent<HTMLElement>,
-        index: number,
-    ) => {
-        const newSelectors = props.selectors.slice();
-        const newSelector = newSelectors[props.selectorIndex];
-        newSelector.searchMode = index;
-
-        await props.setSelectors(newSelectors);
-        refreshSelector(props.canInteract, props.currentIsActiveDomain, props.getRefreshSelector);
-
-        setAnchorEl(null);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    return (
-        <>
-            <Tooltip enterDelay={600} title={selector.searchMode ? chrome.i18n.getMessage('deepSearch') : chrome.i18n.getMessage('shallowSearch')}>
-                <IconButton
-                    edge="end"
-                    aria-label="more"
-                    id="long-button"
-                    aria-controls={open ? 'long-menu' : undefined}
-                    aria-expanded={open ? 'true' : undefined}
-                    aria-haspopup="true"
-                    onClick={handleClickListItem}
-                    sx={{ marginRight: '-9px' }}
-                    disabled={props.autoImportEnabled}
-                >
-                    {searchOptions[selector.searchMode ?? 0].icon}
-                </IconButton>
-            </Tooltip>
-            <Menu
-                id="lock-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                MenuListProps={{
-                    'aria-labelledby': 'lock-button',
-                    role: 'listbox',
-                    style: {
-                        padding: 0
-                    }
-                }}
-            >
-                {searchOptions.map((option, index) => (
-                    <MenuItem
-                        key={index}
-                        selected={index === selector.searchMode}
-                        onClick={async (event) => await handleMenuItemClick(event, index)}
-                        disabled={index === AppConstants.deepSearch && props.selectors[props.selectorIndex].hideMode === AppConstants.TextHideMode}
-                    >
-                        {option.icon}
-                        <span style={{ marginLeft: 9 }}>{option.text}</span>
-                    </MenuItem>
-                ))}
-            </Menu>
-        </>
-    );
-}
-
-interface TextWithTooltipProps {
-    text: string;
-    tooltipTitle: string;
-}
-
-function TextWithTooltip(props: TextWithTooltipProps) {
-    return (
-        <Stack direction={'row'} alignItems={'center'}>
-            <Typography>
-                {props.text}
-            </Typography>
-            <Tooltip title={props.tooltipTitle}>
-                <IconButton size="small" color="primary" sx={{ paddingBottom: '7px' }}>
-                    <HelpOutlineIcon fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-        </Stack>
-    )
-}
-
 const refreshSelector = async (
     canInteract: boolean,
     currentIsActiveDomain: () => boolean,
-    getRefreshSelector: () => Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>
+    getRefreshSelector: () => Promise<RefreshSelector>
 ) => {
     if (!canInteract) {
         return;
