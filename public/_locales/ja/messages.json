@@ -92,10 +92,7 @@
     "defaultTargetFormHelperText": {
         "message": "拡張機能を開いた時のターゲットを指定します。"
     },
-    "thisSiteRadioButtonLabel": {
-        "message": "閲覧中のサイト"
-    },
-    "allSitesRadioButtonLabel": {
+    "allSites": {
         "message": "全てのサイト"
     },
     "dropboxIntegration": {

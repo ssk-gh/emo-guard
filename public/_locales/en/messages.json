@@ -92,10 +92,7 @@
     "defaultTargetFormHelperText": {
         "message": "Specifies the target when this extension is opened."
     },
-    "thisSiteRadioButtonLabel": {
-        "message": "The site you are browsing"
-    },
-    "allSitesRadioButtonLabel": {
+    "allSites": {
         "message": "All sites"
     },
     "dropboxIntegration": {

@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Settings } from './components/settings';
-import './options.css';
-import reportWebVitals from './reportWebVitals';
+import '../styles/options.css';
+import reportWebVitals from '../reportWebVitals';
+import { Options } from './options';
 
 ReactDOM.render(
   <React.StrictMode>
-    <Settings />
+    <Options />
   </React.StrictMode>,
   document.getElementById('root')
 );

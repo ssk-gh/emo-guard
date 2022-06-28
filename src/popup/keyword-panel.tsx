@@ -3,8 +3,8 @@ import { Grid, TextField, List, IconButton, ListItem, ListItemSecondaryAction, L
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
-import { Site } from '../App';
 import DOMPurify from 'dompurify';
+import { Site } from '../types';
 
 interface KeywordProps {
     keywords: string[];
@@ -111,7 +111,7 @@ class KeywordPanel extends React.Component<KeywordProps, KeywordState> {
                 sx={{ height: height + 16, maxHeight: height + 16 }}
             >
                 <Grid item>
-                    <IconButton aria-label="delete" size="large" onClick={() => this.setState({ visible: true })}>
+                    <IconButton aria-label="show" size="large" onClick={() => this.setState({ visible: true })}>
                         <VisibilityIcon sx={{ fontSize: 60 }} />
                     </IconButton>
                 </Grid>

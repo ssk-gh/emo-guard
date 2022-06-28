@@ -3,9 +3,9 @@ import { IconButton, TextField, Grid, Autocomplete, Box, Tooltip } from '@mui/ma
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import AllOutIcon from '@mui/icons-material/AllOut';
 import { getActiveTabAsync, sendMessageToTabAsync } from '../utils/chrome-async';
-import { CssSelector, Site } from '../App';
 import { SelectorPanel } from './selector-panel';
 import { AppConstants } from '../constants/app-constants';
+import { Site, CssSelector, RefreshSelector } from '../types';
 
 interface TargetPanelProps {
     sites: Site[];
@@ -18,7 +18,7 @@ interface TargetPanelProps {
     setCurrentSite(site: Site): void;
     setCurrentSiteIndex(index: number): void;
     setSelectors(selectors: CssSelector[]): Promise<void>;
-    getRefreshSelector(): Promise<{ elementShallowHideSelector: string, elementDeepHideSelector: string, textHideSelector: string }>;
+    getRefreshSelector(): Promise<RefreshSelector>;
     currentIsActiveDomain(): boolean;
 }
 
@@ -67,28 +67,21 @@ class TargetPanel extends React.Component<TargetPanelProps> {
                     <Box justifyContent="center" sx={{ display: 'flex', alignItems: 'center' }}>
                         {powerSettingsButton}
                         <TargetAutocomplete
+                            {...this.props}
                             value={{
                                 id: this.props.currentSite.domain,
                                 label: this.props.currentSite.domain === AppConstants.AllSites
-                                    ? chrome.i18n.getMessage('allSitesRadioButtonLabel')
+                                    ? chrome.i18n.getMessage('allSites')
                                     : this.props.currentSite.domain,
                                 index: this.props.currentSiteIndex
                             }}
-                            activeDomain={this.props.activeDomain}
-                            sites={this.props.sites}
-                            currentSiteIndex={this.props.currentSiteIndex}
-                            setCurrentSiteIndex={this.props.setCurrentSiteIndex}></TargetAutocomplete>
+                        ></TargetAutocomplete>
                     </Box>
                 </Grid>
                 <SelectorPanel
-                    selectors={this.props.currentSite.cssSelectors}
-                    keywords={this.props.keywords}
+                    {...this.props}
                     listHeight={330}
-                    autoImportEnabled={this.props.autoImportEnabled}
-                    setSelectors={this.props.setSelectors}
-                    getRefreshSelector={this.props.getRefreshSelector}
-                    currentIsActiveDomain={this.props.currentIsActiveDomain}
-                    canInteract={this.props.canInteract}
+                    selectors={this.props.currentSite.cssSelectors}
                 ></SelectorPanel>
             </Grid>
         );
@@ -111,7 +104,7 @@ interface TargetAutocompleteState {
 class TargetAutocomplete extends React.Component<TargetAutocompleteProps, TargetAutocompleteState> {
     state: TargetAutocompleteState = {
         inputValue: '',
-        allSiteLabel: chrome.i18n.getMessage('allSitesRadioButtonLabel')
+        allSiteLabel: chrome.i18n.getMessage('allSites')
     };
 
     getOptions() {
@@ -153,7 +146,7 @@ class TargetAutocomplete extends React.Component<TargetAutocompleteProps, Target
             <Autocomplete
                 disablePortal
                 disableClearable
-                id="combo-box-demo"
+                id="target-autocomplete"
                 value={this.props.value}
                 onChange={(event, newValue) => {
                     if (newValue) {

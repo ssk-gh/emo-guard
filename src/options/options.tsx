@@ -1,13 +1,13 @@
 import React from 'react';
-import { Site } from '../App';
 import { AppConstants } from '../constants/app-constants';
-import { getStorageAsync } from '../utils/chrome-async';
-import '../App.css';
+import '../styles/app.css';
 import { SettingsPanel } from './settings-panel';
 import { Container } from '@mui/material';
 import DOMPurify from 'dompurify';
+import { Site } from '../types';
+import { removeEmptySites } from '../utils/common';
 
-export interface SettingsState {
+export interface OptionsState {
     keywords: string[];
     sites: Site[];
     emoGuardian: string;
@@ -20,7 +20,7 @@ export interface SettingsState {
     alwaysShowKeywords: boolean;
 }
 
-class Settings extends React.Component<{}, SettingsState> {
+export class Options extends React.Component<{}, OptionsState> {
     constructor(props = {}) {
         super(props);
         this.state = {
@@ -44,7 +44,7 @@ class Settings extends React.Component<{}, SettingsState> {
     }
 
     async componentDidMount() {
-        const syncData = await getStorageAsync(['keywords', 'sites', 'emoGuardian']);
+        const syncData = await chrome.storage.sync.get(['keywords', 'sites', 'emoGuardian']);
         const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'dropboxIntegrationEnabled', 'autoImportEnabled', 'autoImportInterval', 'lastExport', 'lastImport', 'blockingSpeed', 'alwaysShowKeywords']);
 
         const dropboxIntegrationEnabled = (localData.dropboxIntegrationEnabled ?? this.state.dropboxIntegrationEnabled) as boolean;
@@ -54,7 +54,15 @@ class Settings extends React.Component<{}, SettingsState> {
         const lastImport = localData.lastImport ? new Date(localData.lastImport) : this.state.lastImport;
         const blockingSpeed = (localData.blockingSpeed ?? this.state.blockingSpeed) as number;
         const alwaysShowKeywords = (localData.alwaysShowKeywords ?? this.state.alwaysShowKeywords) as boolean;
+        const keywords = ((autoImportEnabled ? localData.keywords : syncData.keywords) ?? this.state.keywords) as string[];
+        const sites = ((autoImportEnabled ? localData.sites : syncData.sites) ?? this.state.sites) as Site[];
+        const cleanedSites = removeEmptySites(sites);
+        const emoGuardian = ((autoImportEnabled ? localData.emoGuardian : syncData.emoGuardian) ?? this.state.emoGuardian) as string;
+        const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
         this.setState({
+            keywords: keywords,
+            sites: cleanedSites,
+            emoGuardian: cleanedEmoGuardian,
             dropboxIntegrationEnabled: dropboxIntegrationEnabled,
             autoImportEnabled: autoImportEnabled,
             autoImportInterval: autoImportInterval,
@@ -63,30 +71,6 @@ class Settings extends React.Component<{}, SettingsState> {
             blockingSpeed: blockingSpeed,
             alwaysShowKeywords: alwaysShowKeywords
         });
-
-        if (autoImportEnabled) {
-            const keywords = (localData.keywords ?? this.state.keywords) as string[];
-            this.setState({ keywords: keywords });
-
-            const sites = (localData.sites ?? this.state.sites) as Site[];
-            const cleanedSites = this.removeEmptySites(sites);
-            this.setState({ sites: cleanedSites });
-
-            const emoGuardian = localData.emoGuardian ?? this.state.emoGuardian;
-            const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
-            this.setState({ emoGuardian: cleanedEmoGuardian });
-        } else {
-            const keywords = (syncData.keywords ?? this.state.keywords) as string[];
-            this.setState({ keywords: keywords });
-
-            const sites = (syncData.sites ?? this.state.sites) as Site[];
-            const cleanedSites = this.removeEmptySites(sites);
-            this.setSites(cleanedSites);
-
-            const emoGuardian = syncData.emoGuardian ?? this.state.emoGuardian;
-            const cleanedEmoGuardian = DOMPurify.sanitize(emoGuardian);
-            this.setState({ emoGuardian: cleanedEmoGuardian });
-        }
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             switch (message.callee) {
@@ -101,8 +85,6 @@ class Settings extends React.Component<{}, SettingsState> {
         });
     }
 
-    removeEmptySites = (sites: Site[]) => sites.filter(site => site.cssSelectors.length || !site.enabled || site.domain === AppConstants.AllSites);
-
     getSyncContents = async (): Promise<Object> => {
         const keywords = await this.getKeywords();
         const sites = await this.getSites();
@@ -112,19 +94,19 @@ class Settings extends React.Component<{}, SettingsState> {
     }
 
     getKeywords = async (): Promise<string[]> => {
-        const syncData = await getStorageAsync(['keywords']);
+        const syncData = await chrome.storage.sync.get(['keywords']);
         const localData = await chrome.storage.local.get(['keywords']);
         return ((this.state.autoImportEnabled ? localData.keywords : syncData.keywords) ?? []) as string[];
     }
 
     getSites = async (): Promise<Site[]> => {
-        const syncData = await getStorageAsync(['sites']);
+        const syncData = await chrome.storage.sync.get(['sites']);
         const localData = await chrome.storage.local.get(['sites']);
         return ((this.state.autoImportEnabled ? localData.sites : syncData.sites) ?? []) as Site[];
     }
 
     getEmoGuardian = async (): Promise<string> => {
-        const syncData = await getStorageAsync(['emoGuardian']);
+        const syncData = await chrome.storage.sync.get(['emoGuardian']);
         const localData = await chrome.storage.local.get(['emoGuardian']);
         return ((this.state.autoImportEnabled ? localData.emoGuardian : syncData.emoGuardian) ?? '') as string;
     }
@@ -202,5 +184,3 @@ class Settings extends React.Component<{}, SettingsState> {
         );
     }
 }
-
-export { Settings };
