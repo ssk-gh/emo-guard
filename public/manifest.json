@@ -1,6 +1,6 @@
 {
-  "name": "Web Keyword Blocker",
-  "description": "Have a safe web journey.",
+  "name": "EmoGuard",
+  "description": "Emoji guards you. Guards from malicious emotions.",
   "version": "1.0.0",
   "manifest_version": 3,
   "default_locale": "en",
