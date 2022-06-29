@@ -1,1 +1,1 @@
-# web-keyword-blocker
+# EmoGuard
