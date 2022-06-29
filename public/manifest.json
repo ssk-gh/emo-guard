@@ -1,9 +1,14 @@
 {
-  "name": "EmoGuard",
+  "name": "EmoGuard 😎",
   "description": "Emoji guards you. Guards from malicious emotions.",
   "version": "1.0.0",
   "manifest_version": 3,
   "default_locale": "en",
+  "icons": {
+    "16": "/icons/icon16.png",
+    "48": "/icons/icon48.png",
+   "128": "/icons/icon128.png"
+  },
   "permissions": [
     "storage",
     "scripting",
@@ -16,7 +21,11 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": {}
+    "default_icon": {
+      "16": "/icons/icon16.png",
+      "24": "/icons/icon24.png",
+      "32": "/icons/icon32.png"
+    }
   },
   "options_page": "options.html",
   "content_scripts": [

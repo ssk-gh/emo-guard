@@ -22,7 +22,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
             });
         }
 
-        const emoGuardian = '😭🛡 🗯';
+        const emoGuardian = '😎👍';
         chrome.storage.local.set({
             emoGuardian: emoGuardian
         });

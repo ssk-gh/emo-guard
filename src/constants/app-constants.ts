@@ -8,9 +8,9 @@ export class AppConstants {
     static readonly TextHideMode = 1;
     static readonly shallowSearch = 0;
     static readonly deepSearch = 1;
-    static readonly AuthRedirectUrl = 'https://ssk-gh.github.io/web-keyword-blocker/';
+    static readonly AuthRedirectUrl = 'https://ssk-gh.github.io/emo-guard/';
     static readonly BlockListFileName = 'blocklist.json';
-    static readonly RepositoryUrl = 'https://github.com/ssk-gh/web-keyword-blocker';
+    static readonly RepositoryUrl = 'https://github.com/ssk-gh/emo-guard';
     static readonly AutoImportIntervals = [
         {
             value: 5,
