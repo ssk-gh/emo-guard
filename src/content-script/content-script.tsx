@@ -97,9 +97,7 @@ class ContentScript {
         const blockingSpeed = (localData.blockingSpeed ?? 50) as number;
 
         const sites = ((autoImportEnabled ? localData.sites : syncData.sites) ?? []) as Site[];
-        const host = window.self === window.parent
-            ? window.location.hostname
-            : new URL(document.referrer).hostname;
+        const host = getHost();
 
         const thisSite = sites.find(site => site.domain === host);
         const enabled = thisSite ? thisSite.enabled : true;
@@ -218,7 +216,7 @@ class ContentScript {
     private getDocuments = () => {
         const iframeDocuments = Array
             .from(document.getElementsByTagName('iframe'))
-            .filter(iframe => iframe.contentDocument?.body.innerHTML)
+            .filter(iframe => iframe.contentDocument?.body?.innerHTML)
             .map(iframe => iframe.contentDocument) ?? [];
 
         return [document, ...(iframeDocuments as Document[])];
@@ -318,9 +316,7 @@ class ContentScript {
         const selector = this.buildSelectorFrom(element);
         const syncData = await chrome.storage.sync.get('sites');
         const sites = (syncData.sites ?? []) as Site[];
-        const host = window.self === window.parent
-            ? window.location.hostname
-            : new URL(document.referrer).hostname;
+        const host = getHost();
         const thisSite = sites.find(site => site.domain === host) ?? {
             domain: host,
             enabled: true,
@@ -361,7 +357,19 @@ ${selector}
 by ${AppConstants.AppName}`;
 }
 
+const getHost = () =>
+    isIframe()
+        ? new URL(window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1]).hostname
+        : window.location.hostname;
+
+const isIframe = () => window.self !== window.parent;
+
 (async () => {
+    const origin = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];
+    if (isIframe() && !origin.startsWith('http')) {
+        return;
+    }
+
     const contentScript = await ContentScript.build();
 })();
 
