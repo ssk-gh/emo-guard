@@ -36,7 +36,7 @@
         "message": "Repository"
     },
     "selectorTextFieldLabel": {
-        "message": "Enter any css selectors"
+        "message": "Enter any CSS selectors"
     },
     "selectorFormatError": {
         "message": "Incorrect format of CSS selector."

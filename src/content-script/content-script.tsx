@@ -2,7 +2,7 @@ import DOMPurify from "dompurify";
 import { AppConstants } from "../constants/app-constants";
 import '../styles/content-script.css';
 import { Site } from "../types";
-import { buildRefreshSelector } from "../utils/common";
+import { buildRefreshSelector, isSafari } from "../utils/common";
 
 interface ContentScriptState {
     enabled: boolean;
@@ -364,11 +364,27 @@ const getHost = () =>
 
 const isIframe = () => window.self !== window.parent;
 
+const detectAuthFlow = () => {
+    const url = window.location.href;
+    if (!url.startsWith(AppConstants.AuthRedirectUrl)) {
+        return;
+    }
+
+    const authCode = new URL(url).searchParams.get('code');
+    if (!authCode || !isSafari()) {
+        return;
+    }
+
+    chrome.runtime.sendMessage({ callee: 'setAuthCode', args: [authCode] });
+}
+
 (async () => {
     const origin = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];
     if (isIframe() && !origin.startsWith('http')) {
         return;
     }
+
+    detectAuthFlow();
 
     const contentScript = await ContentScript.build();
 })();
