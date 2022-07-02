@@ -127,7 +127,7 @@ function MoreVertMenu() {
                     }
                 }}
             >
-                <MenuItem onClick={() => chrome.runtime.openOptionsPage()}>
+                <MenuItem onClick={() => chrome.runtime.openOptionsPage.bind(chrome.runtime)()}>
                     {chrome.i18n.getMessage('options')}
                 </MenuItem>
             </Menu>
