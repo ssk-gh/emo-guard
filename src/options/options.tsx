@@ -5,7 +5,7 @@ import { SettingsPanel } from './settings-panel';
 import { Container } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { Site } from '../types';
-import { removeEmptySites } from '../utils/common';
+import { initializeStorageIfNeeded, isSafari, removeEmptySites } from '../utils/common';
 
 export interface OptionsState {
     keywords: string[];
@@ -44,6 +44,10 @@ export class Options extends React.Component<{}, OptionsState> {
     }
 
     async componentDidMount() {
+        if (isSafari()) {
+            await initializeStorageIfNeeded();
+        }
+
         const syncData = await chrome.storage.sync.get(['keywords', 'sites', 'emoGuardian']);
         const localData = await chrome.storage.local.get(['keywords', 'sites', 'emoGuardian', 'dropboxIntegrationEnabled', 'autoImportEnabled', 'autoImportInterval', 'lastExport', 'lastImport', 'blockingSpeed', 'alwaysShowKeywords']);
 

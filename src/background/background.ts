@@ -2,7 +2,7 @@ import { Dropbox } from "dropbox";
 import { AppConstants } from "../constants/app-constants";
 import { authorize, fetchFile } from "../cloud/dropbox";
 import { Site } from "../types";
-import { removeEmptySites } from "../utils/common";
+import { initializeStorage, removeEmptySites } from "../utils/common";
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
@@ -10,22 +10,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         const isNewcomer = !syncData.keywords && !syncData.sites;
 
         if (isNewcomer) {
-            const sites = [
-                {
-                    domain: AppConstants.AllSites,
-                    enabled: true,
-                    cssSelectors: AppConstants.RecommendCssSelectors
-                }
-            ];
-            chrome.storage.sync.set({
-                sites: sites
-            });
+            await initializeStorage();
         }
-
-        const emoGuardian = '😎👍';
-        chrome.storage.local.set({
-            emoGuardian: emoGuardian
-        });
     }
 });
 

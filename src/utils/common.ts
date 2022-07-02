@@ -29,3 +29,23 @@ export const buildRefreshSelector = async (sites: Site[], activeDomain: string):
 export const removeEmptySites = (sites: Site[]) => sites.filter(site => site.cssSelectors.length || !site.enabled || site.domain === AppConstants.AllSites);
 
 export const isSafari = () => navigator.userAgent.indexOf('Safari') > -1 && navigator.userAgent.indexOf('Chrome') === -1;
+
+export const initializeStorageIfNeeded = async () => {
+    const localData = await chrome.storage.local.get('hasInitialized');
+    const hasInitialized = (localData.hasInitialized ?? false) as boolean;
+    if (!hasInitialized) {
+        await initializeStorage();
+    }
+}
+
+export const initializeStorage = async () => {
+    await chrome.storage.sync.set({
+        hasInitialized: true,
+        emoGuardian: '😎👍',
+        sites: [{
+            domain: AppConstants.AllSites,
+            enabled: true,
+            cssSelectors: AppConstants.RecommendCssSelectors
+        }]
+    });
+}

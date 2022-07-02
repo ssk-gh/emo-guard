@@ -4,7 +4,7 @@ import BasicTabs from './basic-tab';
 import { AppConstants } from '../constants/app-constants';
 import { getActiveTabAsync } from '../utils/chrome-async';
 import { Site, CssSelector, RefreshSelector } from '../types';
-import { buildRefreshSelector, removeEmptySites } from '../utils/common';
+import { buildRefreshSelector, initializeStorageIfNeeded, isSafari, removeEmptySites } from '../utils/common';
 
 export interface PopupState {
   keywords: string[];
@@ -37,6 +37,10 @@ export class Popup extends React.Component<{}, PopupState> {
   }
 
   async componentDidMount() {
+    if (isSafari()) {
+      await initializeStorageIfNeeded();
+    }
+
     const syncData = await chrome.storage.sync.get(['keywords', 'sites']);
     const localData = await chrome.storage.local.get(['keywords', 'sites', 'autoImportEnabled', 'alwaysShowKeywords']);
 
