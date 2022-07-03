@@ -17,6 +17,9 @@
     "hide": {
         "message": "非表示"
     },
+    "import": {
+        "message": "インポート"
+    },
     "export": {
         "message": "エクスポート"
     },
@@ -163,6 +166,36 @@
     },
     "selectorRegistrationAlert": {
         "message": "CSSセレクターを登録しました！"
+    },
+    "dataManagement": {
+        "message": "データ管理"
+    },
+    "importSecondary": {
+        "message": "ファイルからデータをインポートします。"
+    },
+    "exportSecondary": {
+        "message": "現在のデータをエクスポートします。"
+    },
+    "exportHelp": {
+        "message": "エクスポート対象のデータはCSSセレクター・キーワードです。"
+    },
+    "importRadioLabel": {
+        "message": "インポート時にCSSセレクターの設定値（隠し対象・検索モード・可視状態）を上書きしますか？"
+    },
+    "prioritizeCurrentImport": {
+        "message": "現在の設定値を優先"
+    },
+    "overwriteImport": {
+        "message": "現在の設定値を上書き"
+    },
+    "importError": {
+        "message": "インポート中にエラーが発生しました。ファイル名・ファイル形式を確認してください。"
+    },
+    "importCompleted": {
+        "message": "インポートが完了しました。"
+    },
+    "chooseFile": {
+        "message": "ファイルを選択"
     },
     "fiveMinutes": {
         "message": "5分"

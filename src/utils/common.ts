@@ -49,3 +49,24 @@ export const initializeStorage = async () => {
         }]
     });
 }
+
+export const download = (fileName: string, contents: Object) => {
+    const json = JSON.stringify(contents, null, 2);
+    const element = document.createElement('a');
+    element.setAttribute('href', `data:application/json;charset=utf-8,${encodeURIComponent(json)}`);
+    element.setAttribute('download', fileName);
+    element.style.display = 'none';
+
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
+export const throwIfInvalidType = (
+    value: any,
+    type: 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'undefined' | 'object' | 'function'
+) => {
+    if (typeof value !== type) {
+        throw new Error('Invalid type.');
+    }
+}

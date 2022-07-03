@@ -17,6 +17,9 @@
     "hide": {
         "message": "Hide"
     },
+    "import": {
+        "message": "Import"
+    },
     "export": {
         "message": "Export"
     },
@@ -163,6 +166,36 @@
     },
     "selectorRegistrationAlert": {
         "message": "CSS selector is now registered!"
+    },
+    "dataManagement": {
+        "message": "Data Management"
+    },
+    "importSecondary": {
+        "message": "Import app data."
+    },
+    "exportSecondary": {
+        "message": "Export app data."
+    },
+    "exportHelp": {
+        "message": "The app data to be exported are CSS selectors and keywords."
+    },
+    "importRadioLabel": {
+        "message": "Overwrite CSS selector setting values (hide mode, search mode, visibility) on import?"
+    },
+    "prioritizeCurrentImport": {
+        "message": "Prioritize current setting values"
+    },
+    "overwriteImport": {
+        "message": "Overwrite current setting values"
+    },
+    "importError": {
+        "message": "An error occurred during import. Please check the file name and file format."
+    },
+    "importCompleted": {
+        "message": "Import is complete."
+    },
+    "chooseFile": {
+        "message": "Choose File"
     },
     "fiveMinutes": {
         "message": "5 minutes"

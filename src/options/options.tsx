@@ -115,6 +115,11 @@ export class Options extends React.Component<{}, OptionsState> {
         return ((this.state.autoImportEnabled ? localData.emoGuardian : syncData.emoGuardian) ?? '') as string;
     }
 
+    setKeywords = async (keywords: string[]) => {
+        this.setState({ keywords: keywords });
+        await chrome.storage.sync.set({ keywords: keywords });
+      }
+
     setSites = (sites: Site[]) => {
         this.setState({ sites: sites });
         chrome.storage.sync.set({ sites: sites });
@@ -167,6 +172,8 @@ export class Options extends React.Component<{}, OptionsState> {
                         emoGuardian={this.state.emoGuardian}
                         setEmoGuardian={this.setEmoGuardian}
                         getSyncContents={this.getSyncContents}
+                        getKeywords={this.getKeywords}
+                        setKeywords={this.setKeywords}
                         getSites={this.getSites}
                         setSites={this.setSites}
                         dropboxIntegrationEnabled={this.state.dropboxIntegrationEnabled}

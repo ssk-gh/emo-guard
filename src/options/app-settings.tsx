@@ -115,7 +115,7 @@ export function AppSettings(props: AppSettingsProps) {
                     content={chrome.i18n.getMessage('resetRecommendSelectorConfirmDialogText')}
                     open={dialogOpen}
                     setOpen={setDialogOpen}
-                    callback={() => resetRecommendSelectors()}
+                    okCallback={() => resetRecommendSelectors()}
                 ></ConfirmDialog>
             </ListItem>
         </List>

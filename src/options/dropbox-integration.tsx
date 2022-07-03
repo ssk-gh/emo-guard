@@ -162,7 +162,7 @@ export function DropboxIntegration(props: DropboxIntegrationProps) {
                     )}
                     open={dialogOpen}
                     setOpen={setDialogOpen}
-                    callback={async () => {
+                    okCallback={async () => {
                         await props.setAutoImportEnabled(true)
                         chrome.runtime.sendMessage({ callee: 'importBlockList' });
                     }}

@@ -4,6 +4,7 @@ import { AppConstants } from '../constants/app-constants';
 import { Site } from '../types';
 import { DropboxIntegration } from './dropbox-integration';
 import { AppSettings } from './app-settings';
+import { DataManagement } from './data-management';
 
 interface SettingsPanelProps {
     emoGuardian: string;
@@ -15,6 +16,7 @@ interface SettingsPanelProps {
     blockingSpeed: number;
     alwaysShowKeywords: boolean;
     setEmoGuardian(emoGuardian: string): void;
+    setKeywords(keywords: string[]): Promise<void>;
     setSites(sites: Site[]): void;
     setDropboxIntegrationEnabled(dropboxIntegrationEnabled: boolean): void;
     setAutoImportEnabled(autoImportEnabled: boolean): void;
@@ -22,6 +24,7 @@ interface SettingsPanelProps {
     setLastExport(lastExport: Date): void;
     setBlockingSpeed(blockingSpeed: number): void;
     setAlwaysShowKeywords(alwaysShowKeywords: boolean): void;
+    getKeywords(): Promise<string[]>;
     getSites(): Promise<Site[]>;
     getSyncContents(): Promise<Object>;
 }
@@ -46,6 +49,11 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                 <Grid item xs={12}>
                     <Paper elevation={2}>
                         <DropboxIntegration {...this.props} />
+                    </Paper>
+                </Grid>
+                <Grid item xs={12}>
+                    <Paper elevation={2}>
+                        <DataManagement {...this.props} />
                     </Paper>
                 </Grid>
                 <Grid item xs={12}>

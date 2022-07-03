@@ -3,18 +3,25 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, B
 interface ConfirmDialogProps {
     title: string;
     content: React.ReactNode;
+    okButton?: React.ReactNode;
     open: boolean;
     setOpen(open: boolean): void;
-    callback(): void;
+    okCallback?(): void;
+    closeCallback?(): void;
 }
 
 export function ConfirmDialog(props: ConfirmDialogProps) {
     const handleClose = () => {
+        if (props.closeCallback) {
+            props.closeCallback();
+        }
         props.setOpen(false);
     };
 
     const agree = async () => {
-        props.callback();
+        if (props.okCallback) {
+            props.okCallback();
+        }
         handleClose();
     };
 
@@ -33,7 +40,11 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>{chrome.i18n.getMessage('cancel')}</Button>
-                <Button onClick={agree} autoFocus>OK</Button>
+                {
+                    props.okButton
+                        ? props.okButton
+                        : <Button onClick={agree} autoFocus>OK</Button>
+                }
             </DialogActions>
         </Dialog>
     );
