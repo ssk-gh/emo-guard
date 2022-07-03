@@ -48,11 +48,6 @@ export class SettingsPanel extends React.Component<SettingsPanelProps, SettingsP
                 </Grid>
                 <Grid item xs={12}>
                     <Paper elevation={2}>
-                        <DropboxIntegration {...this.props} />
-                    </Paper>
-                </Grid>
-                <Grid item xs={12}>
-                    <Paper elevation={2}>
                         <DataManagement {...this.props} />
                     </Paper>
                 </Grid>
